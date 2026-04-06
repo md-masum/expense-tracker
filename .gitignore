@@ -3,3 +3,4 @@ js/firebase-config.js
 
 # macOS
 .DS_Store
+!js/firebase-config.js

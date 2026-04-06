@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="72" fill="#0d6efd"/>
+  <rect x="100" y="170" width="312" height="220" rx="18" fill="white" opacity="0.15"/>
+  <rect x="100" y="170" width="312" height="55" rx="18" fill="white" opacity="0.25"/>
+  <rect x="340" y="225" width="72" height="100" rx="14" fill="white" opacity="0.3"/>
+  <circle cx="376" cy="275" r="18" fill="#0d6efd"/>
+  <text x="256" y="345" font-size="90" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="800" fill="white">৳ FT</text>
+</svg>

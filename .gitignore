@@ -1,0 +1,5 @@
+# Firebase real config — credentials injected by GitHub Actions, never commit this
+js/firebase-config.js
+
+# macOS
+.DS_Store

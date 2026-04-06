@@ -36,6 +36,9 @@ jobs:
             -e "s|__FIREBASE_APP_ID__|${FIREBASE_APP_ID}|g" \
             /tmp/site/js/firebase-config.template.js > /tmp/site/js/firebase-config.js
 
+          # firebase-config.js is ignored in the source repo; unignore it for gh-pages publish.
+          echo "!js/firebase-config.js" >> /tmp/site/.gitignore
+
       - name: Deploy to gh-pages branch
         uses: peaceiris/actions-gh-pages@v4
         with:

@@ -201,9 +201,6 @@ const App = (() => {
           <div class="alert alert-info">
             No projects yet. <a href="#/projects" class="alert-link fw-semibold">Create your first project</a>.
           </div>
-          <footer class="dashboard-footer">
-            Design and developed by Masum
-          </footer>
         </div>`;
       return;
     }
@@ -220,8 +217,8 @@ const App = (() => {
     const totalBalance = totalIncome - totalExpense;
 
     const overviewCards = `
-      <div class="row g-3 mb-4">
-        <div class="col-4">
+      <div class="row g-3 mb-4 dashboard-summary-row">
+        <div class="col-12 col-sm-4">
           <div class="card summary-card income text-center h-100 shadow-sm">
             <div class="card-body py-3">
               <div class="stat-value text-success">${formatMoney(totalIncome)}</div>
@@ -229,7 +226,7 @@ const App = (() => {
             </div>
           </div>
         </div>
-        <div class="col-4">
+        <div class="col-12 col-sm-4">
           <div class="card summary-card expense text-center h-100 shadow-sm">
             <div class="card-body py-3">
               <div class="stat-value text-danger">${formatMoney(totalExpense)}</div>
@@ -237,7 +234,7 @@ const App = (() => {
             </div>
           </div>
         </div>
-        <div class="col-4">
+        <div class="col-12 col-sm-4">
           <div class="card summary-card ${totalBalance >= 0 ? 'balance-positive' : 'balance-negative'} text-center h-100 shadow-sm">
             <div class="card-body py-3">
               <div class="stat-value ${totalBalance >= 0 ? 'text-primary' : 'text-warning'}">${formatMoney(totalBalance)}</div>
@@ -285,9 +282,6 @@ const App = (() => {
         ${overviewCards}
         <h6 class="text-muted mb-3">Projects (${summaries.length})</h6>
         <div class="row g-3">${projectCards}</div>
-        <footer class="dashboard-footer">
-          Design and developed by Masum
-        </footer>
       </div>`;
   }
 
@@ -464,8 +458,8 @@ const App = (() => {
           </button>
         </div>
 
-        <div class="row g-2 mb-3">
-          <div class="col-4">
+        <div class="row g-2 mb-3 dashboard-summary-row">
+          <div class="col-12 col-sm-4">
             <div class="card summary-card income text-center h-100 shadow-sm">
               <div class="card-body py-2 px-1">
                 <div class="fw-bold text-success mini-stat">${formatMoney(income)}</div>
@@ -473,7 +467,7 @@ const App = (() => {
               </div>
             </div>
           </div>
-          <div class="col-4">
+          <div class="col-12 col-sm-4">
             <div class="card summary-card expense text-center h-100 shadow-sm">
               <div class="card-body py-2 px-1">
                 <div class="fw-bold text-danger mini-stat">${formatMoney(expense)}</div>
@@ -481,7 +475,7 @@ const App = (() => {
               </div>
             </div>
           </div>
-          <div class="col-4">
+          <div class="col-12 col-sm-4">
             <div class="card summary-card ${balance >= 0 ? 'balance-positive' : 'balance-negative'} text-center h-100 shadow-sm">
               <div class="card-body py-2 px-1">
                 <div class="fw-bold ${balance >= 0 ? 'text-primary' : 'text-warning'} mini-stat">${formatMoney(balance)}</div>
@@ -566,7 +560,7 @@ const App = (() => {
       : `<div class="list-group shadow-sm">` +
           pageItems.map(tx => `
             <div class="list-group-item transaction-item ${tx.type === 'Income' ? 'income' : 'expense'} py-3">
-              <div class="d-flex justify-content-between align-items-start gap-2">
+              <div class="d-flex justify-content-between align-items-start gap-2 tx-item-row">
                 <div class="overflow-hidden">
                   <div>
                     <span class="badge ${tx.type === 'Income' ? 'bg-success' : 'bg-danger'} me-1">${tx.type}</span>
@@ -577,7 +571,7 @@ const App = (() => {
                     ${formatDate(tx.date)}${tx.note ? ' — ' + esc(tx.note) : ''}
                   </small>
                 </div>
-                <div class="text-end flex-shrink-0">
+                <div class="text-end flex-shrink-0 tx-item-actions">
                   <div class="fw-bold ${tx.type === 'Income' ? 'text-success' : 'text-danger'} mb-1">
                     ${tx.type === 'Income' ? '+' : '−'}${formatMoney(tx.amount)}
                   </div>

@@ -86,7 +86,18 @@ const App = (() => {
     const oldBtn = $('modalSaveBtn');
     const newBtn = oldBtn.cloneNode(true);
     oldBtn.parentNode.replaceChild(newBtn, oldBtn);
-    newBtn.addEventListener('click', onSave);
+    newBtn.addEventListener('click', async () => {
+      if (newBtn.disabled) return;
+      newBtn.disabled = true;
+      try {
+        await onSave();
+      } finally {
+        // Re-enable if modal is still present/open (e.g., validation error).
+        if (document.body.contains(newBtn)) {
+          newBtn.disabled = false;
+        }
+      }
+    });
 
     getModal().show();
 
@@ -390,9 +401,15 @@ const App = (() => {
   }
 
   async function deleteProject(id) {
-    if (!confirm('Delete this project?\n\nNote: its transactions will NOT be deleted.')) return;
+    if (!confirm('Delete this project and all its transactions?\n\nThis action cannot be undone.')) return;
+
+    const removedCount = await FinanceDB.deleteTransactionsByProject(id);
     await FinanceDB.deleteItem('projects', id);
-    showToast('Project deleted.', 'danger');
+
+    const msg = removedCount > 0
+      ? `Project deleted (${removedCount} transaction${removedCount !== 1 ? 's' : ''} removed).`
+      : 'Project deleted.';
+    showToast(msg, 'danger');
     await renderProjects();
   }
 

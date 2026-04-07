@@ -1,0 +1,48 @@
+body {
+  background: #f2f5f9;
+  padding-bottom: 72px;
+}
+
+.page-title {
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.summary-card {
+  border-left: 5px solid transparent;
+}
+
+.summary-card.income {
+  border-left-color: #198754;
+}
+
+.summary-card.expense {
+  border-left-color: #dc3545;
+}
+
+.summary-card.balance {
+  border-left-color: #0d6efd;
+}
+
+.app-footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  text-align: center;
+  padding: 0.65rem 1rem;
+  background: rgba(255, 255, 255, 0.96);
+  border-top: 1px solid #dce3ec;
+  font-size: 0.85rem;
+}
+
+.app-footer a {
+  text-decoration: none;
+}
+
+@media (max-width: 576px) {
+  body {
+    padding-bottom: 88px;
+  }
+}

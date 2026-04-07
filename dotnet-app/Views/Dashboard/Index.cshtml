@@ -1,0 +1,65 @@
+@model DashboardSummary
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<h2 class="page-title">Dashboard</h2>
+
+@if (!Model.Projects.Any())
+{
+    <div class="alert alert-info">
+        No projects yet. <a asp-controller="Projects" asp-action="Create" class="alert-link">Create your first project</a>.
+    </div>
+}
+else
+{
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-md-4">
+            <div class="card summary-card income h-100">
+                <div class="card-body">
+                    <h6 class="text-muted">Total Income</h6>
+                    <h4 class="text-success">@Model.TotalIncome.ToString("N2") ৳</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-4">
+            <div class="card summary-card expense h-100">
+                <div class="card-body">
+                    <h6 class="text-muted">Total Expense</h6>
+                    <h4 class="text-danger">@Model.TotalExpense.ToString("N2") ৳</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-4">
+            <div class="card summary-card balance h-100">
+                <div class="card-body">
+                    <h6 class="text-muted">Net Balance</h6>
+                    <h4 class="text-primary">@Model.TotalBalance.ToString("N2") ৳</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        @foreach (var item in Model.Projects)
+        {
+            <div class="col-12 col-md-6 col-xl-4">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <strong>@item.ProjectName</strong>
+                        <span class="badge text-bg-secondary">@item.ProjectType</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between"><span>Income</span><strong class="text-success">@item.Income.ToString("N2") ৳</strong></div>
+                        <div class="d-flex justify-content-between"><span>Expense</span><strong class="text-danger">@item.Expense.ToString("N2") ৳</strong></div>
+                        <div class="d-flex justify-content-between"><span>Balance</span><strong class="text-primary">@item.Balance.ToString("N2") ৳</strong></div>
+                    </div>
+                    <div class="card-footer d-flex justify-content-between align-items-center">
+                        <small class="text-muted">@item.TransactionCount transaction(s)</small>
+                        <a asp-controller="Transactions" asp-action="Index" asp-route-projectId="@item.ProjectId" class="btn btn-sm btn-outline-primary">View</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}

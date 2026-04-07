@@ -1,0 +1,50 @@
+@model TransactionInputModel
+@{
+    ViewData["Title"] = "Create Transaction";
+    var categories = ViewBag.Categories as IEnumerable<SelectListItem> ?? Enumerable.Empty<SelectListItem>();
+}
+
+<h2 class="page-title">Create Transaction</h2>
+
+<form asp-action="Create" method="post" class="card card-body shadow-sm">
+    <input asp-for="ProjectId" type="hidden" />
+
+    <div class="row g-3">
+        <div class="col-12 col-md-6">
+            <label asp-for="Type" class="form-label"></label>
+            <select asp-for="Type" class="form-select">
+                <option value="Expense">Expense</option>
+                <option value="Income">Income</option>
+            </select>
+        </div>
+        <div class="col-12 col-md-6">
+            <label asp-for="CategoryId" class="form-label"></label>
+            <select asp-for="CategoryId" class="form-select" asp-items="categories"></select>
+            <span asp-validation-for="CategoryId" class="text-danger"></span>
+        </div>
+        <div class="col-12 col-md-6">
+            <label asp-for="Amount" class="form-label"></label>
+            <input asp-for="Amount" class="form-control" />
+            <span asp-validation-for="Amount" class="text-danger"></span>
+        </div>
+        <div class="col-12 col-md-6">
+            <label asp-for="Date" class="form-label"></label>
+            <input asp-for="Date" type="date" class="form-control" />
+            <span asp-validation-for="Date" class="text-danger"></span>
+        </div>
+        <div class="col-12">
+            <label asp-for="Note" class="form-label"></label>
+            <textarea asp-for="Note" class="form-control" rows="4"></textarea>
+            <span asp-validation-for="Note" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="d-flex gap-2 mt-3">
+        <button class="btn btn-primary" type="submit">Save</button>
+        <a asp-action="Index" asp-route-projectId="@Model.ProjectId" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

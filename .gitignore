@@ -1,5 +1,30 @@
 # Firebase real config — credentials injected by GitHub Actions, never commit this
 js/firebase-config.js
 
+# .NET build artifacts
+**/bin/
+**/obj/
+
+# Visual Studio / Rider / VS Code user files
+.vs/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.DotSettings.user
+*.Development.json
+
+# NuGet / tooling
+*.nupkg
+*.snupkg
+TestResults/
+
+# Logs and temp files
+*.log
+*.tmp
+*.temp
+
 # macOS
 .DS_Store
+

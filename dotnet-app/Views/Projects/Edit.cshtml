@@ -1,0 +1,36 @@
+@model ProjectInputModel
+@{
+    ViewData["Title"] = "Edit Project";
+}
+
+<h2 class="page-title">Edit Project</h2>
+
+<form asp-action="Edit" method="post" class="card card-body shadow-sm">
+    <input asp-for="Id" type="hidden" />
+
+    <div class="mb-3">
+        <label asp-for="Name" class="form-label"></label>
+        <input asp-for="Name" class="form-control" />
+        <span asp-validation-for="Name" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Type" class="form-label"></label>
+        <select asp-for="Type" class="form-select">
+            <option>Construction</option>
+            <option>Agriculture</option>
+            <option>Business</option>
+            <option>Other</option>
+        </select>
+        <span asp-validation-for="Type" class="text-danger"></span>
+    </div>
+
+    <div class="d-flex gap-2">
+        <button class="btn btn-primary" type="submit">Update</button>
+        <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

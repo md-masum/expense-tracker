@@ -1,0 +1,43 @@
+@{
+    ViewData["Title"] = "Backup";
+    var projects = ViewBag.Projects as IReadOnlyList<Project> ?? [];
+}
+
+<h2 class="page-title">Backup & Export</h2>
+
+<div class="card shadow-sm mb-3">
+    <div class="card-header fw-semibold">Full Backup (JSON)</div>
+    <div class="card-body">
+        <p class="text-muted">Download all projects, categories, and transactions into a single JSON file.</p>
+        <a asp-action="ExportJson" class="btn btn-primary">Export JSON</a>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-3">
+    <div class="card-header fw-semibold">Project Report (CSV)</div>
+    <div class="card-body">
+        <form method="get" asp-action="ExportCsv" class="d-flex flex-wrap gap-2 align-items-center">
+            <select class="form-select" style="max-width: 260px" name="projectId" required>
+                <option value="">Select project</option>
+                @foreach (var project in projects)
+                {
+                    <option value="@project.Id">@project.Name</option>
+                }
+            </select>
+            <button class="btn btn-success" type="submit">Export CSV</button>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header fw-semibold">Restore from Backup</div>
+    <div class="card-body">
+        <form asp-action="ImportJson" method="post" enctype="multipart/form-data" onsubmit="return confirm('This will replace all existing data. Continue?');">
+            @Html.AntiForgeryToken()
+            <div class="mb-3">
+                <input type="file" name="file" accept=".json,application/json" class="form-control" required />
+            </div>
+            <button class="btn btn-warning" type="submit">Import JSON</button>
+        </form>
+    </div>
+</div>

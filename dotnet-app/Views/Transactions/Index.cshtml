@@ -1,0 +1,121 @@
+@model TransactionListResult
+@{
+    ViewData["Title"] = "Transactions";
+    var totalPages = (int)Math.Ceiling((double)Model.TotalCount / Model.PageSize);
+}
+
+<div class="mb-3">
+    <a asp-controller="Projects" asp-action="Index" class="btn btn-sm btn-outline-secondary">Back to Projects</a>
+</div>
+
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+    <div>
+        <h2 class="page-title mb-0">@Model.Project.Name</h2>
+        <span class="badge text-bg-secondary">@Model.Project.Type</span>
+    </div>
+    <a asp-action="Create" asp-route-projectId="@Model.Project.Id" class="btn btn-primary">Add Transaction</a>
+</div>
+
+<div class="row g-2 mb-3">
+    <div class="col-12 col-md-4">
+        <div class="card summary-card income"><div class="card-body"><small class="text-muted">Income</small><h5 class="text-success">@Model.Income.ToString("N2") ৳</h5></div></div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="card summary-card expense"><div class="card-body"><small class="text-muted">Expense</small><h5 class="text-danger">@Model.Expense.ToString("N2") ৳</h5></div></div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="card summary-card balance"><div class="card-body"><small class="text-muted">Balance</small><h5 class="text-primary">@Model.Balance.ToString("N2") ৳</h5></div></div>
+    </div>
+</div>
+
+<form method="get" class="card card-body shadow-sm mb-3">
+    <input type="hidden" name="projectId" value="@Model.Project.Id" />
+    <div class="row g-2">
+        <div class="col-12 col-md-4">
+            <input name="search" value="@Model.Search" class="form-control" placeholder="Search note..." />
+        </div>
+        <div class="col-6 col-md-3">
+            <select name="type" class="form-select">
+                <option value="">All Types</option>
+                @if (Model.Type == TransactionType.Income) { <option value="Income" selected>Income</option> } else { <option value="Income">Income</option> }
+                @if (Model.Type == TransactionType.Expense) { <option value="Expense" selected>Expense</option> } else { <option value="Expense">Expense</option> }
+            </select>
+        </div>
+        <div class="col-6 col-md-3">
+            <select name="categoryId" class="form-select">
+                <option value="">All Categories</option>
+                @foreach (var cat in Model.Categories)
+                {
+                    if (Model.CategoryId == cat.Id)
+                    {
+                        <option value="@cat.Id" selected>@cat.Name</option>
+                    }
+                    else
+                    {
+                        <option value="@cat.Id">@cat.Name</option>
+                    }
+                }
+            </select>
+        </div>
+        <div class="col-12 col-md-2 d-grid">
+            <button class="btn btn-outline-primary">Apply</button>
+        </div>
+    </div>
+</form>
+
+@if (!Model.Items.Any())
+{
+    <div class="alert alert-info">No transactions found.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-striped align-middle">
+            <thead>
+            <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Category</th>
+                <th>Amount</th>
+                <th>Note</th>
+                <th class="text-end">Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var tx in Model.Items)
+            {
+                <tr>
+                    <td>@tx.Date.ToString("dd MMM yyyy")</td>
+                    <td><span class="badge @(tx.Type == TransactionType.Income ? "text-bg-success" : "text-bg-danger")">@tx.Type</span></td>
+                    <td>@tx.Category?.Name</td>
+                    <td class="@(tx.Type == TransactionType.Income ? "text-success" : "text-danger") fw-semibold">@tx.Amount.ToString("N2") ৳</td>
+                    <td>@tx.Note</td>
+                    <td class="text-end">
+                        <a asp-action="Edit" asp-route-id="@tx.Id" class="btn btn-sm btn-outline-secondary">Edit</a>
+                        <form asp-action="Delete" method="post" class="d-inline" onsubmit="return confirm('Delete this transaction?');">
+                            <input type="hidden" name="id" value="@tx.Id" />
+                            <input type="hidden" name="projectId" value="@Model.Project.Id" />
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+
+    @if (totalPages > 1)
+    {
+        <nav>
+            <ul class="pagination pagination-sm">
+                @for (var p = 1; p <= totalPages; p++)
+                {
+                    <li class="page-item @(p == Model.Page ? "active" : string.Empty)">
+                        <a class="page-link" asp-action="Index" asp-route-projectId="@Model.Project.Id" asp-route-page="@p" asp-route-search="@Model.Search" asp-route-type="@Model.Type" asp-route-categoryId="@Model.CategoryId">@p</a>
+                    </li>
+                }
+            </ul>
+        </nav>
+    }
+}

@@ -87,6 +87,33 @@ const FinanceDB = (() => {
       });
   }
 
+  /**
+   * Deletes every transaction linked to the given project.
+   * Uses chunked batches to stay safely under Firestore batch write limits.
+   * Returns the number of deleted transaction documents.
+   */
+  async function deleteTransactionsByProject(projectId) {
+    const projectKey = String(projectId);
+    const chunkSize = 400;
+    let deletedCount = 0;
+
+    while (true) {
+      const snap = await col('transactions')
+        .where('projectId', '==', projectKey)
+        .limit(chunkSize)
+        .get();
+
+      if (snap.empty) break;
+
+      const batch = fbDb.batch();
+      snap.docs.forEach(doc => batch.delete(doc.ref));
+      await batch.commit();
+      deletedCount += snap.size;
+    }
+
+    return deletedCount;
+  }
+
   /* ── Seed defaults ───────────────────────────────────────────────────── */
 
   async function seedDefaults() {
@@ -120,6 +147,7 @@ const FinanceDB = (() => {
     clearStore,
     getNextProjectSeq,
     getTransactionsByProject,
+    deleteTransactionsByProject,
     seedDefaults,
   };
 })();

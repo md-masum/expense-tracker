@@ -10,7 +10,7 @@ body {
 /* Push content below fixed navbar */
 #app-content {
   padding-top: 74px;
-  padding-bottom: 2rem;
+  padding-bottom: 4.75rem;
   min-height: 100vh;
 }
 
@@ -80,14 +80,38 @@ body {
   letter-spacing: 0.03em;
 }
 
-.dashboard-footer {
-  margin-top: 1.5rem;
-  padding-top: 0.9rem;
-  border-top: 1px solid #dee2e6;
+.app-footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1200;
+  padding: 0.5rem 0.9rem calc(0.5rem + env(safe-area-inset-bottom));
+  background: rgba(255, 255, 255, 0.96);
+  border-top: 1px solid #d7dee6;
   text-align: center;
-  font-size: 0.82rem;
-  color: #6c757d;
-  letter-spacing: 0.02em;
+  font-size: 0.78rem;
+  color: #516173;
+  backdrop-filter: blur(4px);
+}
+
+.app-footer a {
+  color: #0d6efd;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.app-footer a:hover {
+  text-decoration: underline;
+}
+
+.app-footer-sep {
+  margin: 0 0.35rem;
+  color: #90a0b3;
+}
+
+.dashboard-summary-row .summary-card {
+  border-left-width: 5px;
 }
 
 /* ── Project cards ───────────────────────────────────────────────────────── */
@@ -148,10 +172,49 @@ body {
   .install-banner { font-size: 0.78rem; }
 }
 
+@media (max-width: 575.98px) {
+  #app-content {
+    padding-top: 68px;
+    padding-bottom: 5.2rem;
+  }
+
+  .page-container {
+    padding: 0 0.8rem;
+  }
+
+  .dashboard-summary-row .summary-card .card-body {
+    padding: 0.75rem 0.85rem;
+  }
+
+  .dashboard-summary-row .stat-value,
+  .dashboard-summary-row .mini-stat {
+    font-size: 1.05rem;
+  }
+
+  .dashboard-summary-row .stat-label,
+  .dashboard-summary-row .mini-label {
+    font-size: 0.72rem;
+  }
+
+  .tx-item-row {
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+
+  .tx-item-actions {
+    text-align: left !important;
+  }
+
+  .tx-item-actions .d-flex {
+    justify-content: flex-start !important;
+  }
+}
+
 /* Slightly larger padding on desktop */
 @media (min-width: 768px) {
   #app-content {
     padding-top: 80px;
+    padding-bottom: 4.95rem;
   }
   .page-container {
     padding: 0 1.5rem;

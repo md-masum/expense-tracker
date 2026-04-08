@@ -1,7 +1,13 @@
 /* Finance Tracker PWA — Service Worker
-   Cache-first strategy for static assets, network-first for dynamic content. */
+  Update-friendly strategy:
+  - network-first for app shell so new releases arrive quickly
+  - cache fallback for offline use */
 
-const CACHE_NAME = 'finance-tracker-v2';
+importScripts('./js/version.js');
+
+const APP_VERSION = self.FINANCE_TRACKER_VERSION || '1.0.1';
+const SW_VERSION = `v${APP_VERSION}`;
+const CACHE_NAME = `finance-tracker-${SW_VERSION}`;
 
 const PRECACHE_ASSETS = [
   './',
@@ -10,6 +16,7 @@ const PRECACHE_ASSETS = [
   './icon.svg',
   './icon-maskable.svg',
   './css/app.css',
+  './js/version.js',
   './js/db.js',
   './js/app.js',
   'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css',
@@ -17,7 +24,65 @@ const PRECACHE_ASSETS = [
   'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js',
 ];
 
-// Install: cache all static assets
+const APP_SHELL_PATHS = new Set([
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/css/app.css',
+  '/js/version.js',
+  '/js/firebase-config.js',
+  '/js/db.js',
+  '/js/app.js',
+  '/icon.svg',
+  '/icon-maskable.svg',
+]);
+
+function toNoStoreRequest(request) {
+  if (request.mode === 'navigate') {
+    return new Request('./index.html', { cache: 'no-store' });
+  }
+  return new Request(request, { cache: 'no-store' });
+}
+
+function isSameOriginAppShell(url) {
+  return url.origin === self.location.origin && APP_SHELL_PATHS.has(url.pathname);
+}
+
+async function networkFirst(request, fallbackToIndex = false) {
+  const cache = await caches.open(CACHE_NAME);
+  try {
+    const response = await fetch(toNoStoreRequest(request));
+    if (response && response.ok) {
+      await cache.put(request, response.clone());
+    }
+    return response;
+  } catch (_) {
+    const cached = await cache.match(request);
+    if (cached) return cached;
+    if (fallbackToIndex) {
+      const fallback = await cache.match('./index.html');
+      if (fallback) return fallback;
+    }
+    throw _;
+  }
+}
+
+async function staleWhileRevalidate(request) {
+  const cache = await caches.open(CACHE_NAME);
+  const cached = await cache.match(request);
+  const networkPromise = fetch(request)
+    .then(response => {
+      if (response && response.ok) {
+        cache.put(request, response.clone());
+      }
+      return response;
+    })
+    .catch(() => null);
+
+  return cached || networkPromise;
+}
+
+// Install: cache core shell
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -39,30 +104,23 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Fetch: cache-first for GET requests; fallback to index.html for navigation
+// Fetch strategy:
+// - navigation + app shell: network-first (fast rollout)
+// - other GET requests: stale-while-revalidate
 self.addEventListener('fetch', event => {
-  // Only handle GET requests
   if (event.request.method !== 'GET') return;
 
-  event.respondWith(
-    caches.match(event.request).then(cached => {
-      if (cached) return cached;
+  const url = new URL(event.request.url);
 
-      return fetch(event.request)
-        .then(response => {
-          // Dynamically cache successful GET responses (fonts, etc.)
-          if (response.ok) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-          }
-          return response;
-        })
-        .catch(() => {
-          // For navigation requests, return the app shell
-          if (event.request.mode === 'navigate') {
-            return caches.match('./index.html');
-          }
-        });
-    })
-  );
+  if (event.request.mode === 'navigate') {
+    event.respondWith(networkFirst(event.request, true));
+    return;
+  }
+
+  if (isSameOriginAppShell(url)) {
+    event.respondWith(networkFirst(event.request, false));
+    return;
+  }
+
+  event.respondWith(staleWhileRevalidate(event.request));
 });

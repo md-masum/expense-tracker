@@ -2,6 +2,8 @@
    Single-page app with hash-based routing and Bootstrap 5 UI. */
 
 const App = (() => {
+  const APP_VERSION = globalThis.FINANCE_TRACKER_VERSION || '1.0.1';
+
   /* ══════════════════════════════════════════════════════════════════════════
      UTILITIES
   ══════════════════════════════════════════════════════════════════════════ */
@@ -1183,10 +1185,34 @@ const App = (() => {
   ══════════════════════════════════════════════════════════════════════════ */
 
   async function init() {
+    const versionEl = $('appVersion');
+    if (versionEl) versionEl.textContent = `v${APP_VERSION}`;
+
     // Register service worker
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js').catch(err => {
-        console.warn('Service Worker registration failed:', err);
+      navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' })
+        .then(reg => {
+          // Check for updates on startup and periodically while app is open.
+          reg.update().catch(() => {});
+          setInterval(() => reg.update().catch(() => {}), 5 * 60 * 1000);
+
+          document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+              reg.update().catch(() => {});
+            }
+          });
+
+          window.addEventListener('online', () => reg.update().catch(() => {}));
+        })
+        .catch(err => {
+          console.warn('Service Worker registration failed:', err);
+        });
+
+      let reloadingForUpdate = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (reloadingForUpdate) return;
+        reloadingForUpdate = true;
+        window.location.reload();
       });
     }
 

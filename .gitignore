@@ -3,3 +3,6 @@ js/firebase-config.js
 
 # macOS
 .DS_Store
+*.Development.json
+dotnet-app
+.idea

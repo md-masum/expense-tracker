@@ -4,10 +4,18 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@(ViewData["Title"] ?? "Finance Tracker")</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@latest/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@latest/font/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body>
+    @{
+        var currentController = (string?)ViewContext.RouteData.Values["controller"] ?? string.Empty;
+        var currentPathWithQuery = $"{Context.Request.Path}{Context.Request.QueryString}";
+        var loginReturnUrl = currentController.Equals("Account", StringComparison.OrdinalIgnoreCase)
+            ? null
+            : currentPathWithQuery;
+    }
     <header>
         <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
             <div class="container-fluid">
@@ -17,11 +25,30 @@
                 </button>
                 <div class="collapse navbar-collapse" id="mainNav">
                     <ul class="navbar-nav ms-auto">
-                        <li class="nav-item"><a class="nav-link" asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
-                        <li class="nav-item"><a class="nav-link" asp-controller="Projects" asp-action="Index">Projects</a></li>
-                        <li class="nav-item"><a class="nav-link" asp-controller="Categories" asp-action="Index">Categories</a></li>
-                        <li class="nav-item"><a class="nav-link" asp-controller="Backup" asp-action="Index">Backup</a></li>
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            <li class="nav-item"><a class="nav-link @(currentController == "Dashboard" ? "active" : string.Empty)" asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
+                            <li class="nav-item"><a class="nav-link @(currentController == "Companies" ? "active" : string.Empty)" asp-controller="Companies" asp-action="Index">Companies</a></li>
+                            <li class="nav-item"><a class="nav-link @(currentController == "Projects" ? "active" : string.Empty)" asp-controller="Projects" asp-action="Index">Projects</a></li>
+                            <li class="nav-item"><a class="nav-link @(currentController == "Categories" ? "active" : string.Empty)" asp-controller="Categories" asp-action="Index">Categories</a></li>
+                            <li class="nav-item"><a class="nav-link @(currentController == "Backup" ? "active" : string.Empty)" asp-controller="Backup" asp-action="Index">Backup</a></li>
+                        }
                     </ul>
+                    <div class="d-flex align-items-center ms-lg-3 mt-2 mt-lg-0">
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            <span class="text-white-50 small me-2">@User.Identity.Name</span>
+                            <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <button class="btn btn-outline-light btn-sm" type="submit">Sign Out</button>
+                            </form>
+                        }
+                        else
+                        {
+                            <a asp-controller="Account" asp-action="Login" asp-route-returnUrl="@loginReturnUrl" class="btn btn-outline-light btn-sm me-2">Sign In</a>
+                            <a asp-controller="Account" asp-action="Register" asp-route-returnUrl="@loginReturnUrl" class="btn btn-light btn-sm">Register</a>
+                        }
+                    </div>
                 </div>
             </div>
         </nav>
@@ -46,7 +73,7 @@
         <a href="mailto:md.wr.masum@gmail.com">md.wr.masum@gmail.com</a>
     </footer>
 
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@latest/dist/js/bootstrap.bundle.min.js"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

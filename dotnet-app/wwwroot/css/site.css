@@ -3,6 +3,10 @@ body {
   padding-bottom: 72px;
 }
 
+.validation-summary-valid {
+  display: none;
+}
+
 .page-title {
   font-weight: 700;
   margin-bottom: 1rem;

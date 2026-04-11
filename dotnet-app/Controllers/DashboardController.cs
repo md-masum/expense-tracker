@@ -1,8 +1,10 @@
 using FinanceTracker.Web.Application.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FinanceTracker.Web.Controllers;
 
+[Authorize]
 public class DashboardController(DashboardService dashboardService) : Controller
 {
     public async Task<IActionResult> Index(CancellationToken cancellationToken)

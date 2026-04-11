@@ -1,9 +1,11 @@
 using FinanceTracker.Web.Application.Services;
 using FinanceTracker.Web.Application.Abstractions;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FinanceTracker.Web.Controllers;
 
+[Authorize]
 public class BackupController(
     BackupService backupService,
     IProjectRepository projectRepository) : Controller

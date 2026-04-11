@@ -1,0 +1,139 @@
+@model CompaniesIndexViewModel
+@{
+    ViewData["Title"] = "Companies";
+    var currentUserId = Model.CurrentUserId;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="page-title mb-0">Companies</h2>
+    <a asp-action="Create" class="btn btn-primary">New Company</a>
+</div>
+
+@if (!Model.HasAnyCompany)
+{
+    <div class="alert alert-info">
+        You are not linked with any company yet. Create your own company or send a join request below.
+    </div>
+}
+
+@if (!Model.Companies.Any())
+{
+    <div class="alert alert-info">No companies found. Create your first company.</div>
+}
+else
+{
+    <div class="table-responsive mb-4">
+        <table class="table table-striped align-middle">
+            <thead>
+            <tr>
+                <th>Banner</th>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Owner</th>
+                <th class="text-end">Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var c in Model.Companies)
+            {
+                var isOwner = c.OwnerId == currentUserId;
+                var isMember = isOwner || c.UserCompanyMaps.Any(m => m.UserId == currentUserId);
+                var hasPendingRequest = c.JoinRequests.Any(r => r.UserId == currentUserId && r.Status == CompanyJoinRequestStatus.Pending);
+                var pendingRequests = c.JoinRequests
+                    .Where(r => r.Status == CompanyJoinRequestStatus.Pending)
+                    .OrderBy(r => r.CreatedAt)
+                    .ToList();
+                <tr>
+                    <td>
+                        @if (!string.IsNullOrWhiteSpace(c.ImageUrl))
+                        {
+                            <img src="@c.ImageUrl" alt="@c.Name banner" style="width:100px;height:56px;object-fit:cover" class="rounded border" />
+                        }
+                        else
+                        {
+                            <span class="text-muted small">No image</span>
+                        }
+                    </td>
+                    <td>@c.Name</td>
+                    <td>@(string.IsNullOrWhiteSpace(c.Description) ? "-" : c.Description)</td>
+                    <td>@c.Owner?.Email</td>
+                    <td class="text-end">
+                        @if (isOwner)
+                        {
+                            <a asp-action="Edit" asp-route-id="@c.Id" class="btn btn-sm btn-outline-secondary">Edit</a>
+                            <form asp-action="Delete" method="post" class="d-inline" onsubmit="return confirm('Delete this company?');">
+                                <input type="hidden" name="id" value="@c.Id" />
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                            </form>
+                        }
+                        else if (isMember)
+                        {
+                            <span class="badge text-bg-success">Member</span>
+                        }
+                        else if (hasPendingRequest)
+                        {
+                            <span class="badge text-bg-warning">Request Pending</span>
+                        }
+                        else
+                        {
+                            <form asp-action="RequestJoin" method="post" class="d-inline">
+                                <input type="hidden" name="companyId" value="@c.Id" />
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm btn-outline-primary">Join</button>
+                            </form>
+                        }
+                    </td>
+                </tr>
+
+                @if (isOwner && pendingRequests.Any())
+                {
+                    <tr>
+                        <td></td>
+                        <td colspan="4">
+                            <div class="card border-0 bg-light">
+                                <div class="card-body py-3">
+                                    <h6 class="mb-3">Pending Join Requests</h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm align-middle mb-0">
+                                            <thead>
+                                            <tr>
+                                                <th>User</th>
+                                                <th>Requested</th>
+                                                <th class="text-end">Actions</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            @foreach (var request in pendingRequests)
+                                            {
+                                                <tr>
+                                                    <td>@request.User.Email</td>
+                                                    <td>@request.CreatedAt.ToLocalTime().ToString("dd MMM yyyy HH:mm")</td>
+                                                    <td class="text-end">
+                                                        <form asp-action="ApproveJoinRequest" method="post" class="d-inline">
+                                                            <input type="hidden" name="requestId" value="@request.Id" />
+                                                            @Html.AntiForgeryToken()
+                                                            <button type="submit" class="btn btn-sm btn-success">Approve</button>
+                                                        </form>
+                                                        <form asp-action="RejectJoinRequest" method="post" class="d-inline">
+                                                            <input type="hidden" name="requestId" value="@request.Id" />
+                                                            @Html.AntiForgeryToken()
+                                                            <button type="submit" class="btn btn-sm btn-outline-danger">Reject</button>
+                                                        </form>
+                                                    </td>
+                                                </tr>
+                                            }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            }
+            </tbody>
+        </table>
+    </div>
+}
+

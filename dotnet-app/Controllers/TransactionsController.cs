@@ -1,11 +1,13 @@
 using FinanceTracker.Web.Application.Services;
 using FinanceTracker.Web.Domain.Entities;
 using FinanceTracker.Web.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace FinanceTracker.Web.Controllers;
 
+[Authorize]
 public class TransactionsController(
     TransactionService transactionService,
     CategoryService categoryService) : Controller

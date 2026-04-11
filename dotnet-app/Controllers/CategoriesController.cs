@@ -1,9 +1,11 @@
 using FinanceTracker.Web.Application.Services;
 using FinanceTracker.Web.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FinanceTracker.Web.Controllers;
 
+[Authorize]
 public class CategoriesController(CategoryService categoryService) : Controller
 {
     public async Task<IActionResult> Index(CancellationToken cancellationToken)

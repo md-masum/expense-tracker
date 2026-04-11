@@ -1,18 +1,24 @@
 using FinanceTracker.Web.Application.Abstractions;
 using FinanceTracker.Web.Domain.Entities;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace FinanceTracker.Web.Infrastructure.Data;
 
 public class FinanceDbContext(DbContextOptions<FinanceDbContext> options)
-    : DbContext(options), IUnitOfWork
+    : IdentityDbContext<ApplicationUser>(options), IUnitOfWork
 {
     public DbSet<Project> Projects => Set<Project>();
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<FinanceTransaction> Transactions => Set<FinanceTransaction>();
+    public DbSet<Company> Companies => Set<Company>();
+    public DbSet<UserCompanyMap> UserCompanyMaps => Set<UserCompanyMap>();
+    public DbSet<UserCompanyJoinRequest> UserCompanyJoinRequests => Set<UserCompanyJoinRequest>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        base.OnModelCreating(modelBuilder);
+
         modelBuilder.Entity<Project>(entity =>
         {
             entity.Property(x => x.Name).HasMaxLength(100).IsRequired();
@@ -52,6 +58,50 @@ public class FinanceDbContext(DbContextOptions<FinanceDbContext> options)
             entity.HasIndex(x => new { x.ProjectId, x.Date });
         });
 
-        base.OnModelCreating(modelBuilder);
+        modelBuilder.Entity<Company>(entity =>
+        {
+            entity.Property(x => x.Name).HasMaxLength(150).IsRequired();
+            entity.Property(x => x.Description).HasMaxLength(1000);
+            entity.Property(x => x.ImageUrl).HasMaxLength(500);
+            entity.HasIndex(x => x.Name);
+            entity.HasIndex(x => x.OwnerId);
+
+            entity.HasOne(x => x.Owner)
+                .WithMany(x => x.OwnedCompanies)
+                .HasForeignKey(x => x.OwnerId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<UserCompanyMap>(entity =>
+        {
+            entity.HasIndex(x => new { x.CompanyId, x.UserId }).IsUnique();
+            entity.HasIndex(x => x.UserId);
+
+            entity.HasOne(x => x.Company)
+                .WithMany(x => x.UserCompanyMaps)
+                .HasForeignKey(x => x.CompanyId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(x => x.User)
+                .WithMany(x => x.UserCompanyMaps)
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<UserCompanyJoinRequest>(entity =>
+        {
+            entity.HasIndex(x => new { x.CompanyId, x.UserId, x.Status });
+            entity.HasIndex(x => new { x.UserId, x.Status });
+
+            entity.HasOne(x => x.Company)
+                .WithMany(x => x.JoinRequests)
+                .HasForeignKey(x => x.CompanyId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(x => x.User)
+                .WithMany(x => x.CompanyJoinRequests)
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
     }
 }

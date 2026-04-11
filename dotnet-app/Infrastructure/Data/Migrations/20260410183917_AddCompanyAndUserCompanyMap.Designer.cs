@@ -4,6 +4,7 @@ using FinanceTracker.Web.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FinanceTracker.Web.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(FinanceDbContext))]
-    partial class FinanceDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260410183917_AddCompanyAndUserCompanyMap")]
+    partial class AddCompanyAndUserCompanyMap
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -170,15 +173,9 @@ namespace FinanceTracker.Web.Infrastructure.Data.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
 
-                    b.Property<string>("OwnerId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
                     b.HasKey("Id");
 
                     b.HasIndex("Name");
-
-                    b.HasIndex("OwnerId");
 
                     b.ToTable("Companies");
                 });
@@ -252,39 +249,6 @@ namespace FinanceTracker.Web.Infrastructure.Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Projects");
-                });
-
-            modelBuilder.Entity("FinanceTracker.Web.Domain.Entities.UserCompanyJoinRequest", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("CompanyId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("ReviewedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId", "Status");
-
-                    b.HasIndex("CompanyId", "UserId", "Status");
-
-                    b.ToTable("UserCompanyJoinRequests");
                 });
 
             modelBuilder.Entity("FinanceTracker.Web.Domain.Entities.UserCompanyMap", b =>
@@ -445,17 +409,6 @@ namespace FinanceTracker.Web.Infrastructure.Data.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("FinanceTracker.Web.Domain.Entities.Company", b =>
-                {
-                    b.HasOne("FinanceTracker.Web.Domain.Entities.ApplicationUser", "Owner")
-                        .WithMany("OwnedCompanies")
-                        .HasForeignKey("OwnerId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Owner");
-                });
-
             modelBuilder.Entity("FinanceTracker.Web.Domain.Entities.FinanceTransaction", b =>
                 {
                     b.HasOne("FinanceTracker.Web.Domain.Entities.Category", "Category")
@@ -473,25 +426,6 @@ namespace FinanceTracker.Web.Infrastructure.Data.Migrations
                     b.Navigation("Category");
 
                     b.Navigation("Project");
-                });
-
-            modelBuilder.Entity("FinanceTracker.Web.Domain.Entities.UserCompanyJoinRequest", b =>
-                {
-                    b.HasOne("FinanceTracker.Web.Domain.Entities.Company", "Company")
-                        .WithMany("JoinRequests")
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("FinanceTracker.Web.Domain.Entities.ApplicationUser", "User")
-                        .WithMany("CompanyJoinRequests")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Company");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("FinanceTracker.Web.Domain.Entities.UserCompanyMap", b =>
@@ -566,10 +500,6 @@ namespace FinanceTracker.Web.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("FinanceTracker.Web.Domain.Entities.ApplicationUser", b =>
                 {
-                    b.Navigation("CompanyJoinRequests");
-
-                    b.Navigation("OwnedCompanies");
-
                     b.Navigation("UserCompanyMaps");
                 });
 
@@ -580,8 +510,6 @@ namespace FinanceTracker.Web.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("FinanceTracker.Web.Domain.Entities.Company", b =>
                 {
-                    b.Navigation("JoinRequests");
-
                     b.Navigation("UserCompanyMaps");
                 });
 

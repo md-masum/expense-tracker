@@ -1,6 +1,12 @@
 # Firebase real config — credentials injected by GitHub Actions, never commit this
 js/firebase-config.js
 
+# Runtime-uploaded banner files for the MVC app
+dotnet-app/wwwroot/uploads/*
+!dotnet-app/wwwroot/uploads/company-banners/
+dotnet-app/wwwroot/uploads/company-banners/*
+!dotnet-app/wwwroot/uploads/company-banners/.gitkeep
+
 # .NET build artifacts
 **/bin/
 **/obj/

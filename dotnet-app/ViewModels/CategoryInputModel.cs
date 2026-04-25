@@ -11,5 +11,5 @@ public class CategoryInputModel
     public string Name { get; set; } = string.Empty;
 
     [Required]
-    public TransactionType Type { get; set; } = TransactionType.Expense;
+    public TransactionType Type { get; set; } = TransactionType.Debit;
 }

@@ -1,6 +1,7 @@
 @model ProjectInputModel
 @{
     ViewData["Title"] = "Create Project";
+    var projectTypes = ViewBag.ProjectTypes as IEnumerable<FinanceTracker.Web.Domain.Entities.ProjectType> ?? Enumerable.Empty<FinanceTracker.Web.Domain.Entities.ProjectType>();
 }
 
 <h2 class="page-title">Create Project</h2>
@@ -13,15 +14,15 @@
     </div>
 
     <div class="mb-3">
-        <label asp-for="Type" class="form-label"></label>
-        <select asp-for="Type" class="form-select">
+        <label asp-for="ProjectTypeId" class="form-label"></label>
+        <select asp-for="ProjectTypeId" class="form-select">
             <option value="">Select type</option>
-            <option>Construction</option>
-            <option>Agriculture</option>
-            <option>Business</option>
-            <option>Other</option>
+            @foreach (var type in projectTypes)
+            {
+                <option value="@type.Id">@type.Name</option>
+            }
         </select>
-        <span asp-validation-for="Type" class="text-danger"></span>
+        <span asp-validation-for="ProjectTypeId" class="text-danger"></span>
     </div>
 
     <div class="d-flex gap-2">

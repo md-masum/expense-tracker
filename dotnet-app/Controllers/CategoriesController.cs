@@ -20,8 +20,15 @@ public class CategoriesController(CategoryService categoryService) : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(CategoryInputModel input, CancellationToken cancellationToken)
     {
+        var fromModal = Request.Form["fromModal"] == "true";
         if (!ModelState.IsValid)
         {
+            if (fromModal)
+            {
+                TempData["ModalError"] = ModelState.Values.SelectMany(v => v.Errors).FirstOrDefault()?.ErrorMessage ?? "Validation failed.";
+                TempData["ModalTarget"] = "createCategoryModal";
+                return RedirectToAction(nameof(Index));
+            }
             return View(input);
         }
 
@@ -33,11 +40,7 @@ public class CategoriesController(CategoryService categoryService) : Controller
     public async Task<IActionResult> Edit(int id, CancellationToken cancellationToken)
     {
         var category = await categoryService.GetByIdAsync(id, cancellationToken);
-        if (category is null)
-        {
-            return NotFound();
-        }
-
+        if (category is null) return NotFound();
         return View(new CategoryInputModel { Id = category.Id, Name = category.Name, Type = category.Type });
     }
 
@@ -45,16 +48,19 @@ public class CategoriesController(CategoryService categoryService) : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(CategoryInputModel input, CancellationToken cancellationToken)
     {
+        var fromModal = Request.Form["fromModal"] == "true";
         if (!ModelState.IsValid)
         {
+            if (fromModal)
+            {
+                TempData["Error"] = ModelState.Values.SelectMany(v => v.Errors).FirstOrDefault()?.ErrorMessage ?? "Validation failed.";
+                return RedirectToAction(nameof(Index));
+            }
             return View(input);
         }
 
         var updated = await categoryService.UpdateAsync(input.Id, input.Name, input.Type, cancellationToken);
-        if (!updated)
-        {
-            return NotFound();
-        }
+        if (!updated) return NotFound();
 
         TempData["Success"] = "Category updated.";
         return RedirectToAction(nameof(Index));

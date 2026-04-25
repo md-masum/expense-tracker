@@ -8,9 +8,12 @@ public interface ICompanyRepository
     Task<bool> ExistsForUserAsync(string userId, CancellationToken cancellationToken = default);
     Task<bool> IsUserLinkedAsync(int companyId, string userId, CancellationToken cancellationToken = default);
     Task<List<Company>> GetByUserAsync(string userId, CancellationToken cancellationToken = default);
+    Task<Company?> GetDefaultForUserAsync(string userId, CancellationToken cancellationToken = default);
+    Task<UserCompanyMap?> GetUserMapAsync(int companyId, string userId, CancellationToken cancellationToken = default);
     Task<Company?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
     Task<Company?> GetByIdForUserAsync(int id, string userId, CancellationToken cancellationToken = default);
     Task AddAsync(Company company, CancellationToken cancellationToken = default);
+    void RemoveUserMap(UserCompanyMap userCompanyMap);
     void Remove(Company company);
 }
 

@@ -9,6 +9,7 @@ public class FinanceDbContext(DbContextOptions<FinanceDbContext> options)
     : IdentityDbContext<ApplicationUser>(options), IUnitOfWork
 {
     public DbSet<Project> Projects => Set<Project>();
+    public DbSet<ProjectType> ProjectTypes => Set<ProjectType>();
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<FinanceTransaction> Transactions => Set<FinanceTransaction>();
     public DbSet<Company> Companies => Set<Company>();
@@ -19,10 +20,35 @@ public class FinanceDbContext(DbContextOptions<FinanceDbContext> options)
     {
         base.OnModelCreating(modelBuilder);
 
+        modelBuilder.Entity<ProjectType>(entity =>
+        {
+            entity.Property(x => x.Name).HasMaxLength(100).IsRequired();
+            entity.Property(x => x.Description).HasMaxLength(500);
+            entity.HasIndex(x => x.Name).IsUnique();
+
+            entity.HasData(
+                new ProjectType { Id = 1, Name = "Construction", IsActive = true, CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new ProjectType { Id = 2, Name = "Agriculture", IsActive = true, CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new ProjectType { Id = 3, Name = "Business", IsActive = true, CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new ProjectType { Id = 4, Name = "Other", IsActive = true, CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
+            );
+        });
+
         modelBuilder.Entity<Project>(entity =>
         {
             entity.Property(x => x.Name).HasMaxLength(100).IsRequired();
-            entity.Property(x => x.Type).HasMaxLength(40).IsRequired();
+
+            entity.HasOne(x => x.Company)
+                .WithMany(x => x.Projects)
+                .HasForeignKey(x => x.CompanyId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(x => x.Type)
+                .WithMany(x => x.Projects)
+                .HasForeignKey(x => x.ProjectTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(x => x.CompanyId);
         });
 
         modelBuilder.Entity<Category>(entity =>
@@ -31,12 +57,12 @@ public class FinanceDbContext(DbContextOptions<FinanceDbContext> options)
             entity.HasIndex(x => new { x.Name, x.Type }).IsUnique();
 
             entity.HasData(
-                new Category { Id = 1, Name = "Sand", Type = TransactionType.Expense },
-                new Category { Id = 2, Name = "Labour", Type = TransactionType.Expense },
-                new Category { Id = 3, Name = "Brick", Type = TransactionType.Expense },
-                new Category { Id = 4, Name = "Materials", Type = TransactionType.Expense },
-                new Category { Id = 5, Name = "Investment", Type = TransactionType.Income },
-                new Category { Id = 6, Name = "Sale", Type = TransactionType.Income }
+                new Category { Id = 1, Name = "Sand", Type = TransactionType.Debit },
+                new Category { Id = 2, Name = "Labour", Type = TransactionType.Debit },
+                new Category { Id = 3, Name = "Brick", Type = TransactionType.Debit },
+                new Category { Id = 4, Name = "Materials", Type = TransactionType.Debit },
+                new Category { Id = 5, Name = "Investment", Type = TransactionType.Credit },
+                new Category { Id = 6, Name = "Sale", Type = TransactionType.Credit }
             );
         });
 
@@ -44,6 +70,7 @@ public class FinanceDbContext(DbContextOptions<FinanceDbContext> options)
         {
             entity.Property(x => x.Amount).HasColumnType("decimal(18,2)");
             entity.Property(x => x.Note).HasMaxLength(500);
+            entity.Property(x => x.InvoiceImageUrl).HasMaxLength(500);
 
             entity.HasOne(x => x.Project)
                 .WithMany(x => x.Transactions)
@@ -74,6 +101,7 @@ public class FinanceDbContext(DbContextOptions<FinanceDbContext> options)
 
         modelBuilder.Entity<UserCompanyMap>(entity =>
         {
+            entity.Property(x => x.IsDefault).HasDefaultValue(false);
             entity.HasIndex(x => new { x.CompanyId, x.UserId }).IsUnique();
             entity.HasIndex(x => x.UserId);
 

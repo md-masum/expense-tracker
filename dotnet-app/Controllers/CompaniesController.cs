@@ -33,20 +33,30 @@ public class CompaniesController(CompanyService companyService) : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(CompanyInputModel input, CancellationToken cancellationToken)
     {
+        var fromModal = Request.Form["fromModal"] == "true";
         var userId = GetCurrentUserId();
-        if (userId is null)
-        {
-            return Challenge();
-        }
+        if (userId is null) return Challenge();
 
         if (!ModelState.IsValid)
         {
+            if (fromModal)
+            {
+                TempData["ModalError"] = ModelState.Values.SelectMany(v => v.Errors).FirstOrDefault()?.ErrorMessage ?? "Validation failed.";
+                TempData["ModalTarget"] = "createCompanyOffcanvas";
+                return RedirectToAction(nameof(Index));
+            }
             return View(input);
         }
 
         var result = await companyService.CreateAsync(userId, input.Name, input.Description, input.BannerImage, cancellationToken);
         if (result.Status == CompanyMutationStatus.ValidationFailed)
         {
+            if (fromModal)
+            {
+                TempData["ModalError"] = result.Error ?? "Invalid banner image.";
+                TempData["ModalTarget"] = "createCompanyOffcanvas";
+                return RedirectToAction(nameof(Index));
+            }
             ModelState.AddModelError(nameof(input.BannerImage), result.Error ?? "Invalid banner image.");
             return View(input);
         }
@@ -87,30 +97,30 @@ public class CompaniesController(CompanyService companyService) : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(CompanyInputModel input, CancellationToken cancellationToken)
     {
+        var fromModal = Request.Form["fromModal"] == "true";
         var userId = GetCurrentUserId();
-        if (userId is null)
-        {
-            return Challenge();
-        }
+        if (userId is null) return Challenge();
 
         if (!ModelState.IsValid)
         {
+            if (fromModal)
+            {
+                TempData["Error"] = ModelState.Values.SelectMany(v => v.Errors).FirstOrDefault()?.ErrorMessage ?? "Validation failed.";
+                return RedirectToAction(nameof(Index));
+            }
             return View(input);
         }
 
         var result = await companyService.UpdateAsync(input.Id, userId, input.Name, input.Description, input.BannerImage, cancellationToken);
-        if (result.Status == CompanyMutationStatus.NotFound)
-        {
-            return NotFound();
-        }
-
-        if (result.Status == CompanyMutationStatus.Forbidden)
-        {
-            return Forbid();
-        }
-
+        if (result.Status == CompanyMutationStatus.NotFound) return NotFound();
+        if (result.Status == CompanyMutationStatus.Forbidden) return Forbid();
         if (result.Status == CompanyMutationStatus.ValidationFailed)
         {
+            if (fromModal)
+            {
+                TempData["Error"] = result.Error ?? "Invalid banner image.";
+                return RedirectToAction(nameof(Index));
+            }
             ModelState.AddModelError(nameof(input.BannerImage), result.Error ?? "Invalid banner image.");
             return View(input);
         }
@@ -146,6 +156,36 @@ public class CompaniesController(CompanyService companyService) : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SetDefault(int companyId, string? returnUrl, CancellationToken cancellationToken)
+    {
+        var userId = GetCurrentUserId();
+        if (userId is null)
+        {
+            return Challenge();
+        }
+
+        var result = await companyService.SetDefaultAsync(companyId, userId, cancellationToken);
+        if (result.Status == CompanyMutationStatus.NotFound)
+        {
+            return NotFound();
+        }
+
+        if (result.Status == CompanyMutationStatus.Forbidden)
+        {
+            return Forbid();
+        }
+
+        TempData["Success"] = "Active company updated.";
+        if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+        {
+            return LocalRedirect(returnUrl);
+        }
+
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> RequestJoin(int companyId, CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
@@ -164,6 +204,35 @@ public class CompaniesController(CompanyService companyService) : Controller
             result.Status == CompanyMutationStatus.Success
                 ? "Join request submitted."
                 : result.Error ?? "Unable to submit join request.";
+
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RemoveUser(int companyId, string userId, CancellationToken cancellationToken)
+    {
+        var currentUserId = GetCurrentUserId();
+        if (currentUserId is null)
+        {
+            return Challenge();
+        }
+
+        var result = await companyService.RemoveUserAsync(companyId, userId, currentUserId, cancellationToken);
+        if (result.Status == CompanyMutationStatus.NotFound)
+        {
+            return NotFound();
+        }
+
+        if (result.Status == CompanyMutationStatus.Forbidden)
+        {
+            return Forbid();
+        }
+
+        TempData[result.Status == CompanyMutationStatus.Success ? "Success" : "Error"] =
+            result.Status == CompanyMutationStatus.Success
+                ? "User removed from company."
+                : result.Error ?? "Unable to remove user from company.";
 
         return RedirectToAction(nameof(Index));
     }

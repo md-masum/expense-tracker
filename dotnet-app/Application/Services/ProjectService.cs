@@ -6,20 +6,26 @@ namespace FinanceTracker.Web.Application.Services;
 public class ProjectService(
     IProjectRepository projectRepository,
     ITransactionRepository transactionRepository,
+    ActiveCompanyContext activeCompanyContext,
     IUnitOfWork unitOfWork)
 {
+    private int GetRequiredCompanyId()
+        => activeCompanyContext.CompanyId
+           ?? throw new InvalidOperationException("No active company is selected.");
+
     public Task<List<Project>> GetAllAsync(CancellationToken cancellationToken = default)
-        => projectRepository.GetAllAsync(cancellationToken: cancellationToken);
+        => projectRepository.GetAllAsync(GetRequiredCompanyId(), cancellationToken: cancellationToken);
 
     public Task<Project?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
-        => projectRepository.GetByIdAsync(id, cancellationToken: cancellationToken);
+        => projectRepository.GetByIdAsync(id, GetRequiredCompanyId(), cancellationToken: cancellationToken);
 
-    public async Task CreateAsync(string name, string type, CancellationToken cancellationToken = default)
+    public async Task CreateAsync(string name, int projectTypeId, CancellationToken cancellationToken = default)
     {
         var project = new Project
         {
+            CompanyId = GetRequiredCompanyId(),
             Name = name.Trim(),
-            Type = type.Trim(),
+            ProjectTypeId = projectTypeId,
             CreatedAt = DateTime.UtcNow,
             IsActive = true
         };
@@ -28,16 +34,16 @@ public class ProjectService(
         await unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<bool> UpdateAsync(int id, string name, string type, CancellationToken cancellationToken = default)
+    public async Task<bool> UpdateAsync(int id, string name, int projectTypeId, CancellationToken cancellationToken = default)
     {
-        var project = await projectRepository.GetByIdAsync(id, cancellationToken: cancellationToken);
+        var project = await projectRepository.GetByIdAsync(id, GetRequiredCompanyId(), cancellationToken: cancellationToken);
         if (project is null)
         {
             return false;
         }
 
         project.Name = name.Trim();
-        project.Type = type.Trim();
+        project.ProjectTypeId = projectTypeId;
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return true;
@@ -45,7 +51,8 @@ public class ProjectService(
 
     public async Task<int?> DeleteWithTransactionsAsync(int id, CancellationToken cancellationToken = default)
     {
-        var project = await projectRepository.GetByIdAsync(id, cancellationToken: cancellationToken);
+        var companyId = GetRequiredCompanyId();
+        var project = await projectRepository.GetByIdAsync(id, companyId, cancellationToken: cancellationToken);
         if (project is null)
         {
             return null;

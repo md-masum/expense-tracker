@@ -2,6 +2,6 @@ namespace FinanceTracker.Web.Domain.Entities;
 
 public enum TransactionType
 {
-    Expense = 1,
-    Income = 2
+    Debit = 1,
+    Credit = 2
 }

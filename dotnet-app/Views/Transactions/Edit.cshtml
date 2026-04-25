@@ -6,7 +6,7 @@
 
 <h2 class="page-title">Edit Transaction</h2>
 
-<form asp-action="Edit" method="post" class="card card-body shadow-sm">
+<form asp-action="Edit" method="post" enctype="multipart/form-data" class="card card-body shadow-sm">
     <input asp-for="Id" type="hidden" />
     <input asp-for="ProjectId" type="hidden" />
 
@@ -14,14 +14,14 @@
         <div class="col-12 col-md-6">
             <label asp-for="Type" class="form-label"></label>
             <select asp-for="Type" class="form-select">
-                <option value="Expense">Expense</option>
-                <option value="Income">Income</option>
+                <option value="Debit">Debit</option>
+                <option value="Credit">Credit</option>
             </select>
         </div>
         <div class="col-12 col-md-6">
-            <label asp-for="CategoryId" class="form-label"></label>
-            <select asp-for="CategoryId" class="form-select" asp-items="categories"></select>
-            <span asp-validation-for="CategoryId" class="text-danger"></span>
+            <label asp-for="Category" class="form-label"></label>
+            <select asp-for="Category" class="form-select" asp-items="categories"></select>
+            <span asp-validation-for="Category" class="text-danger"></span>
         </div>
         <div class="col-12 col-md-6">
             <label asp-for="Amount" class="form-label"></label>
@@ -37,6 +37,27 @@
             <label asp-for="Note" class="form-label"></label>
             <textarea asp-for="Note" class="form-control" rows="4"></textarea>
             <span asp-validation-for="Note" class="text-danger"></span>
+        </div>
+
+        <div class="col-12">
+            <label asp-for="InvoiceImage" class="form-label">Invoice Image</label>
+
+            @if (!string.IsNullOrWhiteSpace(Model.ExistingInvoiceImageUrl))
+            {
+                <div class="mb-3">
+                    <div class="border rounded p-2 bg-light">
+                        <img src="@Model.ExistingInvoiceImageUrl" alt="Invoice image" class="img-fluid rounded" style="max-height: 260px; object-fit: contain;" />
+                    </div>
+                    <div class="form-check mt-2">
+                        <input asp-for="RemoveInvoiceImage" class="form-check-input" />
+                        <label asp-for="RemoveInvoiceImage" class="form-check-label">Remove current image</label>
+                    </div>
+                </div>
+            }
+
+            <input asp-for="InvoiceImage" type="file" class="form-control" accept="image/png,image/jpeg,image/webp" />
+            <div class="form-text">Upload a new image to replace the existing one. Accepted: JPG, PNG, WEBP. Max 5MB.</div>
+            <span asp-validation-for="InvoiceImage" class="text-danger"></span>
         </div>
     </div>
 

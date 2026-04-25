@@ -9,6 +9,7 @@ public class FinanceTransaction
     public decimal Amount { get; set; }
     public DateTime Date { get; set; }
     public string? Note { get; set; }
+    public string? InvoiceImageUrl { get; set; }
     public int SeqNo { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

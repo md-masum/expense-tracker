@@ -38,7 +38,7 @@ public class TransactionsController(
         {
             ProjectId = projectId,
             Date = DateTime.Today,
-            Type = TransactionType.Expense
+            Type = TransactionType.Debit
         });
     }
 
@@ -46,22 +46,48 @@ public class TransactionsController(
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(TransactionInputModel input, CancellationToken cancellationToken)
     {
+        var fromModal = Request.Form["fromModal"] == "true";
         var categories = await categoryService.GetAllAsync(cancellationToken);
         ViewBag.Categories = BuildCategories(categories, input.Type);
 
         if (!ModelState.IsValid)
         {
+            if (fromModal)
+            {
+                TempData["Error"] = "Please fix validation errors and try again.";
+                return RedirectToAction(nameof(Index), new { projectId = input.ProjectId });
+            }
+
             return View(input);
         }
 
-        await transactionService.CreateAsync(
-            input.ProjectId,
-            input.CategoryId,
-            input.Type,
-            input.Amount,
-            input.Date,
-            input.Note,
-            cancellationToken);
+        try
+        {
+            await transactionService.CreateAsync(
+                input.ProjectId,
+                input.Category,
+                input.Type,
+                input.Amount,
+                input.Date,
+                input.Note,
+                input.InvoiceImage,
+                cancellationToken);
+        }
+        catch (ArgumentException ex)
+        {
+            if (fromModal)
+            {
+                TempData["Error"] = ex.Message;
+                return RedirectToAction(nameof(Index), new { projectId = input.ProjectId });
+            }
+
+            ModelState.AddModelError(nameof(input.InvoiceImage), ex.Message);
+            return View(input);
+        }
+        catch (InvalidOperationException)
+        {
+            return NotFound();
+        }
 
         TempData["Success"] = "Transaction created.";
         return RedirectToAction(nameof(Index), new { projectId = input.ProjectId });
@@ -82,11 +108,12 @@ public class TransactionsController(
         {
             Id = tx.Id,
             ProjectId = tx.ProjectId,
-            CategoryId = tx.CategoryId,
+            Category = tx.CategoryId,
             Type = tx.Type,
             Amount = tx.Amount,
             Date = tx.Date,
-            Note = tx.Note
+            Note = tx.Note,
+            ExistingInvoiceImageUrl = tx.InvoiceImageUrl
         });
     }
 
@@ -94,22 +121,54 @@ public class TransactionsController(
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(TransactionInputModel input, CancellationToken cancellationToken)
     {
+        var fromModal = Request.Form["fromModal"] == "true";
+        var existingTransaction = await transactionService.GetByIdAsync(input.Id, cancellationToken);
+        if (existingTransaction is null)
+        {
+            return NotFound();
+        }
+
+        input.ExistingInvoiceImageUrl = existingTransaction.InvoiceImageUrl;
+
         var categories = await categoryService.GetAllAsync(cancellationToken);
         ViewBag.Categories = BuildCategories(categories, input.Type);
 
         if (!ModelState.IsValid)
         {
+            if (fromModal)
+            {
+                TempData["Error"] = "Please fix validation errors and try again.";
+                return RedirectToAction(nameof(Index), new { projectId = input.ProjectId });
+            }
+
             return View(input);
         }
 
-        var updated = await transactionService.UpdateAsync(
-            input.Id,
-            input.CategoryId,
-            input.Type,
-            input.Amount,
-            input.Date,
-            input.Note,
-            cancellationToken);
+        bool updated;
+        try
+        {
+            updated = await transactionService.UpdateAsync(
+                input.Id,
+                input.Category,
+                input.Type,
+                input.Amount,
+                input.Date,
+                input.Note,
+                input.InvoiceImage,
+                input.RemoveInvoiceImage,
+                cancellationToken);
+        }
+        catch (ArgumentException ex)
+        {
+            if (fromModal)
+            {
+                TempData["Error"] = ex.Message;
+                return RedirectToAction(nameof(Index), new { projectId = input.ProjectId });
+            }
+
+            ModelState.AddModelError(nameof(input.InvoiceImage), ex.Message);
+            return View(input);
+        }
 
         if (!updated)
         {

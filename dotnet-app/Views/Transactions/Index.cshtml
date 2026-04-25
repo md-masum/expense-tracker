@@ -11,17 +11,17 @@
 <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
     <div>
         <h2 class="page-title mb-0">@Model.Project.Name</h2>
-        <span class="badge text-bg-secondary">@Model.Project.Type</span>
+        <span class="badge text-bg-secondary">@Model.Project.Type?.Name</span>
     </div>
-    <a asp-action="Create" asp-route-projectId="@Model.Project.Id" class="btn btn-primary">Add Transaction</a>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTxModal">Add Transaction</button>
 </div>
 
 <div class="row g-2 mb-3">
     <div class="col-12 col-md-4">
-        <div class="card summary-card income"><div class="card-body"><small class="text-muted">Income</small><h5 class="text-success">@Model.Income.ToString("N2") ৳</h5></div></div>
+        <div class="card summary-card income"><div class="card-body"><small class="text-muted">Credit</small><h5 class="text-success">@Model.Credit.ToString("N2") ৳</h5></div></div>
     </div>
     <div class="col-12 col-md-4">
-        <div class="card summary-card expense"><div class="card-body"><small class="text-muted">Expense</small><h5 class="text-danger">@Model.Expense.ToString("N2") ৳</h5></div></div>
+        <div class="card summary-card expense"><div class="card-body"><small class="text-muted">Debit</small><h5 class="text-danger">@Model.Debit.ToString("N2") ৳</h5></div></div>
     </div>
     <div class="col-12 col-md-4">
         <div class="card summary-card balance"><div class="card-body"><small class="text-muted">Balance</small><h5 class="text-primary">@Model.Balance.ToString("N2") ৳</h5></div></div>
@@ -37,8 +37,8 @@
         <div class="col-6 col-md-3">
             <select name="type" class="form-select">
                 <option value="">All Types</option>
-                @if (Model.Type == TransactionType.Income) { <option value="Income" selected>Income</option> } else { <option value="Income">Income</option> }
-                @if (Model.Type == TransactionType.Expense) { <option value="Expense" selected>Expense</option> } else { <option value="Expense">Expense</option> }
+                @if (Model.Type == TransactionType.Credit) { <option value="Credit" selected>Credit</option> } else { <option value="Credit">Credit</option> }
+                @if (Model.Type == TransactionType.Debit) { <option value="Debit" selected>Debit</option> } else { <option value="Debit">Debit</option> }
             </select>
         </div>
         <div class="col-6 col-md-3">
@@ -78,26 +78,103 @@ else
                 <th>Category</th>
                 <th>Amount</th>
                 <th>Note</th>
+                <th>Invoice</th>
                 <th class="text-end">Actions</th>
             </tr>
             </thead>
             <tbody>
             @foreach (var tx in Model.Items)
             {
+                var modalId = $"txViewModal-{tx.Id}";
                 <tr>
                     <td>@tx.Date.ToString("dd MMM yyyy")</td>
-                    <td><span class="badge @(tx.Type == TransactionType.Income ? "text-bg-success" : "text-bg-danger")">@tx.Type</span></td>
+                    <td><span class="badge @(tx.Type == TransactionType.Credit ? "text-bg-success" : "text-bg-danger")">@tx.Type</span></td>
                     <td>@tx.Category?.Name</td>
-                    <td class="@(tx.Type == TransactionType.Income ? "text-success" : "text-danger") fw-semibold">@tx.Amount.ToString("N2") ৳</td>
+                    <td class="@(tx.Type == TransactionType.Credit ? "text-success" : "text-danger") fw-semibold">@tx.Amount.ToString("N2") ৳</td>
                     <td>@tx.Note</td>
+                    <td>
+                        @if (!string.IsNullOrWhiteSpace(tx.InvoiceImageUrl))
+                        {
+                            <a href="@tx.InvoiceImageUrl" target="_blank" rel="noopener" class="btn btn-sm btn-outline-info">Image</a>
+                        }
+                        else
+                        {
+                            <span class="text-muted small">N/A</span>
+                        }
+                    </td>
                     <td class="text-end">
-                        <a asp-action="Edit" asp-route-id="@tx.Id" class="btn btn-sm btn-outline-secondary">Edit</a>
+                        <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#@modalId">View</button>
+                        <button type="button"
+                                class="btn btn-sm btn-outline-secondary js-edit-transaction"
+                                data-bs-toggle="modal"
+                                data-bs-target="#editTxModal"
+                                data-id="@tx.Id"
+                                data-project-id="@tx.ProjectId"
+                                data-category-id="@tx.CategoryId"
+                                data-type="@tx.Type"
+                                data-amount="@tx.Amount"
+                                data-date="@tx.Date.ToString("yyyy-MM-dd")"
+                                data-note="@tx.Note"
+                                data-invoice-url="@tx.InvoiceImageUrl">
+                            Edit
+                        </button>
                         <form asp-action="Delete" method="post" class="d-inline" onsubmit="return confirm('Delete this transaction?');">
                             <input type="hidden" name="id" value="@tx.Id" />
                             <input type="hidden" name="projectId" value="@Model.Project.Id" />
                             @Html.AntiForgeryToken()
                             <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
                         </form>
+
+                        <div class="modal fade text-start" id="@modalId" tabindex="-1" aria-labelledby="@($"{modalId}-label")" aria-hidden="true">
+                            <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="@($"{modalId}-label")">Transaction Details</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="row g-3">
+                                            <div class="col-12 col-md-6">
+                                                <div class="small text-muted">Date</div>
+                                                <div class="fw-semibold">@tx.Date.ToString("dd MMM yyyy")</div>
+                                            </div>
+                                            <div class="col-12 col-md-6">
+                                                <div class="small text-muted">Type</div>
+                                                <div><span class="badge @(tx.Type == TransactionType.Credit ? "text-bg-success" : "text-bg-danger")">@tx.Type</span></div>
+                                            </div>
+                                            <div class="col-12 col-md-6">
+                                                <div class="small text-muted">Category</div>
+                                                <div class="fw-semibold">@(tx.Category?.Name ?? "Unknown")</div>
+                                            </div>
+                                            <div class="col-12 col-md-6">
+                                                <div class="small text-muted">Amount</div>
+                                                <div class="fw-semibold @(tx.Type == TransactionType.Credit ? "text-success" : "text-danger")">@tx.Amount.ToString("N2") ৳</div>
+                                            </div>
+                                            <div class="col-12">
+                                                <div class="small text-muted">Note</div>
+                                                <div class="border rounded p-2 bg-light">@(!string.IsNullOrWhiteSpace(tx.Note) ? tx.Note : "-")</div>
+                                            </div>
+                                            <div class="col-12">
+                                                <div class="small text-muted mb-2">Invoice Image</div>
+                                                @if (!string.IsNullOrWhiteSpace(tx.InvoiceImageUrl))
+                                                {
+                                                    <div class="border rounded p-2 bg-light text-center">
+                                                        <img src="@tx.InvoiceImageUrl" alt="Invoice image" class="img-fluid rounded" style="max-height: 380px; object-fit: contain;" />
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <div class="text-muted">No invoice image uploaded.</div>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </td>
                 </tr>
             }
@@ -118,4 +195,190 @@ else
             </ul>
         </nav>
     }
+
+    <div class="modal fade" id="createTxModal" tabindex="-1" aria-labelledby="createTxModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <form asp-action="Create" method="post" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="fromModal" value="true" />
+                    <input type="hidden" name="ProjectId" value="@Model.Project.Id" />
+
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="createTxModalLabel">Create Transaction</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-12 col-md-6">
+                                <label for="createType" class="form-label">Type</label>
+                                <select id="createType" name="Type" class="form-select">
+                                    <option value="Debit">Debit</option>
+                                    <option value="Credit">Credit</option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label for="createCategory" class="form-label">Category</label>
+                                <select id="createCategory" name="Category" class="form-select" required></select>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label for="createAmount" class="form-label">Amount</label>
+                                <input id="createAmount" name="Amount" type="number" min="0.01" step="0.01" class="form-control" required />
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label for="createDate" class="form-label">Date</label>
+                                <input id="createDate" name="Date" type="date" class="form-control" value="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+                            </div>
+                            <div class="col-12">
+                                <label for="createNote" class="form-label">Note</label>
+                                <textarea id="createNote" name="Note" class="form-control" rows="3"></textarea>
+                            </div>
+                            <div class="col-12">
+                                <label for="createInvoiceImage" class="form-label">Invoice Image</label>
+                                <input id="createInvoiceImage" name="InvoiceImage" type="file" class="form-control" accept="image/png,image/jpeg,image/webp" />
+                                <div class="form-text">Accepted: JPG, PNG, WEBP. Max 5MB.</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Transaction</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="editTxModal" tabindex="-1" aria-labelledby="editTxModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <form asp-action="Edit" method="post" enctype="multipart/form-data" id="editTxForm">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="fromModal" value="true" />
+                    <input type="hidden" id="editId" name="Id" />
+                    <input type="hidden" id="editProjectId" name="ProjectId" />
+
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editTxModalLabel">Edit Transaction</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-12 col-md-6">
+                                <label for="editType" class="form-label">Type</label>
+                                <select id="editType" name="Type" class="form-select">
+                                    <option value="Debit">Debit</option>
+                                    <option value="Credit">Credit</option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label for="editCategory" class="form-label">Category</label>
+                                <select id="editCategory" name="Category" class="form-select" required></select>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label for="editAmount" class="form-label">Amount</label>
+                                <input id="editAmount" name="Amount" type="number" min="0.01" step="0.01" class="form-control" required />
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label for="editDate" class="form-label">Date</label>
+                                <input id="editDate" name="Date" type="date" class="form-control" required />
+                            </div>
+                            <div class="col-12">
+                                <label for="editNote" class="form-label">Note</label>
+                                <textarea id="editNote" name="Note" class="form-control" rows="3"></textarea>
+                            </div>
+
+                            <div class="col-12" id="editInvoicePreviewWrap" style="display:none;">
+                                <label class="form-label">Current Invoice Image</label>
+                                <div class="border rounded p-2 bg-light text-center">
+                                    <img id="editInvoicePreview" src="" alt="Invoice image" class="img-fluid rounded" style="max-height: 260px; object-fit: contain;" />
+                                </div>
+                                <div class="form-check mt-2">
+                                    <input class="form-check-input" type="checkbox" id="editRemoveInvoiceImage" name="RemoveInvoiceImage" value="true" />
+                                    <label class="form-check-label" for="editRemoveInvoiceImage">Remove current image</label>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <label for="editInvoiceImage" class="form-label">Upload New Invoice Image</label>
+                                <input id="editInvoiceImage" name="InvoiceImage" type="file" class="form-control" accept="image/png,image/jpeg,image/webp" />
+                                <div class="form-text">Upload a new image to replace current one. Accepted: JPG, PNG, WEBP. Max 5MB.</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Update Transaction</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        const categories = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+            Model.Categories.Select(c => new { id = c.Id, name = c.Name, type = c.Type.ToString() })));
+
+        function populateCategoryOptions(selectEl, type, selectedId) {
+            const filtered = categories.filter(c => c.type === type);
+            selectEl.innerHTML = '';
+
+            if (filtered.length === 0) {
+                const opt = document.createElement('option');
+                opt.value = '';
+                opt.textContent = 'No categories found';
+                selectEl.appendChild(opt);
+                return;
+            }
+
+            filtered.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = String(c.id);
+                opt.textContent = c.name;
+                if (selectedId && String(selectedId) === String(c.id)) {
+                    opt.selected = true;
+                }
+                selectEl.appendChild(opt);
+            });
+        }
+
+        const createType = document.getElementById('createType');
+        const createCategory = document.getElementById('createCategory');
+        createType.addEventListener('change', () => populateCategoryOptions(createCategory, createType.value));
+        populateCategoryOptions(createCategory, createType.value);
+
+        const editType = document.getElementById('editType');
+        const editCategory = document.getElementById('editCategory');
+        const editInvoicePreviewWrap = document.getElementById('editInvoicePreviewWrap');
+        const editInvoicePreview = document.getElementById('editInvoicePreview');
+        const editRemoveInvoiceImage = document.getElementById('editRemoveInvoiceImage');
+
+        editType.addEventListener('change', () => populateCategoryOptions(editCategory, editType.value));
+
+        document.querySelectorAll('.js-edit-transaction').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.getElementById('editId').value = btn.dataset.id;
+                document.getElementById('editProjectId').value = btn.dataset.projectId;
+                document.getElementById('editType').value = btn.dataset.type;
+                document.getElementById('editAmount').value = btn.dataset.amount;
+                document.getElementById('editDate').value = btn.dataset.date;
+                document.getElementById('editNote').value = btn.dataset.note || '';
+                populateCategoryOptions(editCategory, btn.dataset.type, btn.dataset.categoryId);
+
+                const invoiceUrl = btn.dataset.invoiceUrl;
+                if (invoiceUrl) {
+                    editInvoicePreview.src = invoiceUrl;
+                    editInvoicePreviewWrap.style.display = 'block';
+                } else {
+                    editInvoicePreview.src = '';
+                    editInvoicePreviewWrap.style.display = 'none';
+                }
+
+                editRemoveInvoiceImage.checked = false;
+                document.getElementById('editInvoiceImage').value = '';
+            });
+        });
+    </script>
 }

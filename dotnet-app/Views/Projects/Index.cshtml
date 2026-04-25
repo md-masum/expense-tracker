@@ -1,16 +1,19 @@
 @model IReadOnlyList<Project>
 @{
     ViewData["Title"] = "Projects";
+    var projectTypes = ViewBag.ProjectTypes as IEnumerable<FinanceTracker.Web.Domain.Entities.ProjectType> ?? Enumerable.Empty<FinanceTracker.Web.Domain.Entities.ProjectType>();
 }
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h2 class="page-title mb-0">Projects</h2>
-    <a asp-action="Create" class="btn btn-primary">New Project</a>
+    <h2 class="page-title mb-0"><i class="bi bi-folder me-2"></i>Projects</h2>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createProjectModal">
+        <i class="bi bi-plus-lg me-1"></i>New Project
+    </button>
 </div>
 
 @if (!Model.Any())
 {
-    <div class="alert alert-info">No projects yet.</div>
+    <div class="alert alert-info">No projects yet. Click <strong>New Project</strong> to get started.</div>
 }
 else
 {
@@ -28,16 +31,29 @@ else
             @foreach (var p in Model)
             {
                 <tr>
-                    <td>@p.Name</td>
-                    <td><span class="badge text-bg-secondary">@p.Type</span></td>
+                    <td class="fw-semibold">@p.Name</td>
+                    <td><span class="badge text-bg-secondary">@p.Type?.Name</span></td>
                     <td>@p.CreatedAt.ToLocalTime().ToString("dd MMM yyyy")</td>
                     <td class="text-end">
-                        <a asp-controller="Transactions" asp-action="Index" asp-route-projectId="@p.Id" class="btn btn-sm btn-outline-primary">Transactions</a>
-                        <a asp-action="Edit" asp-route-id="@p.Id" class="btn btn-sm btn-outline-secondary">Edit</a>
-                        <form asp-action="Delete" method="post" class="d-inline" onsubmit="return confirm('Delete this project and all transactions?');">
+                        <a asp-controller="Transactions" asp-action="Index" asp-route-projectId="@p.Id"
+                           class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-list-ul me-1"></i>Transactions
+                        </a>
+                        <button type="button"
+                                class="btn btn-sm btn-outline-secondary js-edit-project"
+                                data-bs-toggle="modal" data-bs-target="#editProjectModal"
+                                data-id="@p.Id"
+                                data-name="@p.Name"
+                                data-project-type-id="@p.ProjectTypeId">
+                            <i class="bi bi-pencil me-1"></i>Edit
+                        </button>
+                        <form asp-action="Delete" method="post" class="d-inline"
+                              onsubmit="return confirm('Delete this project and all its transactions?');">
                             <input type="hidden" name="id" value="@p.Id" />
                             @Html.AntiForgeryToken()
-                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-trash me-1"></i>Delete
+                            </button>
                         </form>
                     </td>
                 </tr>
@@ -45,4 +61,95 @@ else
             </tbody>
         </table>
     </div>
+}
+
+<!-- ── Create Project Modal ──────────────────────────────── -->
+<div class="modal fade" id="createProjectModal" tabindex="-1" aria-labelledby="createProjectModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form asp-action="Create" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="fromModal" value="true" />
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createProjectModalLabel">
+                        <i class="bi bi-folder-plus me-2"></i>New Project
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger modal-error-alert d-none mb-3"></div>
+                    <div class="mb-3">
+                        <label for="createProjectName" class="form-label">Project Name <span class="text-danger">*</span></label>
+                        <input id="createProjectName" name="Name" type="text" class="form-control" placeholder="Enter project name" maxlength="100" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="createProjectType" class="form-label">Project Type <span class="text-danger">*</span></label>
+                        <select id="createProjectType" name="ProjectTypeId" class="form-select" required>
+                            <option value="">— Select type —</option>
+                            @foreach (var t in projectTypes)
+                            {
+                                <option value="@t.Id">@t.Name</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Save Project</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ── Edit Project Modal ────────────────────────────────── -->
+<div class="modal fade" id="editProjectModal" tabindex="-1" aria-labelledby="editProjectModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form asp-action="Edit" method="post" id="editProjectForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="fromModal" value="true" />
+                <input type="hidden" id="editProjectId" name="Id" />
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editProjectModalLabel">
+                        <i class="bi bi-pencil-square me-2"></i>Edit Project
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="editProjectName" class="form-label">Project Name <span class="text-danger">*</span></label>
+                        <input id="editProjectName" name="Name" type="text" class="form-control" maxlength="100" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="editProjectType" class="form-label">Project Type <span class="text-danger">*</span></label>
+                        <select id="editProjectType" name="ProjectTypeId" class="form-select" required>
+                            <option value="">— Select type —</option>
+                            @foreach (var t in projectTypes)
+                            {
+                                <option value="@t.Id">@t.Name</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Update Project</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('.js-edit-project').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                document.getElementById('editProjectId').value = btn.dataset.id;
+                document.getElementById('editProjectName').value = btn.dataset.name;
+                var sel = document.getElementById('editProjectType');
+                sel.value = btn.dataset.projectTypeId;
+            });
+        });
+    </script>
 }

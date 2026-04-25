@@ -4,59 +4,176 @@
 }
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h2 class="page-title mb-0">Categories</h2>
-    <a asp-action="Create" class="btn btn-primary">New Category</a>
+    <h2 class="page-title mb-0"><i class="bi bi-tags me-2"></i>Categories</h2>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createCategoryModal">
+        <i class="bi bi-plus-lg me-1"></i>New Category
+    </button>
 </div>
 
 @if (!Model.Any())
 {
-    <div class="alert alert-info">No categories yet.</div>
+    <div class="alert alert-info">No categories yet. Click <strong>New Category</strong> to get started.</div>
 }
 else
 {
     <div class="row g-3">
         <div class="col-12 col-lg-6">
-            <div class="card">
-                <div class="card-header fw-semibold text-danger">Expense</div>
+            <div class="card h-100">
+                <div class="card-header d-flex align-items-center gap-2">
+                    <i class="bi bi-arrow-down-circle text-danger"></i>
+                    <span class="text-danger">Debit Categories</span>
+                </div>
                 <ul class="list-group list-group-flush">
-                    @foreach (var cat in Model.Where(x => x.Type == TransactionType.Expense))
+                    @foreach (var cat in Model.Where(x => x.Type == TransactionType.Debit))
                     {
                         <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <span>@cat.Name</span>
-                            <span>
-                                <a asp-action="Edit" asp-route-id="@cat.Id" class="btn btn-sm btn-outline-secondary">Edit</a>
-                                <form asp-action="Delete" method="post" class="d-inline" onsubmit="return confirm('Delete category?');">
+                            <span class="fw-medium">@cat.Name</span>
+                            <span class="d-flex gap-1">
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-secondary js-edit-category"
+                                        data-bs-toggle="modal" data-bs-target="#editCategoryModal"
+                                        data-id="@cat.Id"
+                                        data-name="@cat.Name"
+                                        data-type="@cat.Type">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <form asp-action="Delete" method="post" class="d-inline"
+                                      onsubmit="return confirm('Delete category \'@cat.Name\'?');">
                                     <input type="hidden" name="id" value="@cat.Id" />
                                     @Html.AntiForgeryToken()
-                                    <button class="btn btn-sm btn-outline-danger">Delete</button>
+                                    <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
                                 </form>
                             </span>
                         </li>
+                    }
+                    @if (!Model.Any(x => x.Type == TransactionType.Debit))
+                    {
+                        <li class="list-group-item text-muted small">No debit categories yet.</li>
                     }
                 </ul>
             </div>
         </div>
 
         <div class="col-12 col-lg-6">
-            <div class="card">
-                <div class="card-header fw-semibold text-success">Income</div>
+            <div class="card h-100">
+                <div class="card-header d-flex align-items-center gap-2">
+                    <i class="bi bi-arrow-up-circle text-success"></i>
+                    <span class="text-success">Credit Categories</span>
+                </div>
                 <ul class="list-group list-group-flush">
-                    @foreach (var cat in Model.Where(x => x.Type == TransactionType.Income))
+                    @foreach (var cat in Model.Where(x => x.Type == TransactionType.Credit))
                     {
                         <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <span>@cat.Name</span>
-                            <span>
-                                <a asp-action="Edit" asp-route-id="@cat.Id" class="btn btn-sm btn-outline-secondary">Edit</a>
-                                <form asp-action="Delete" method="post" class="d-inline" onsubmit="return confirm('Delete category?');">
+                            <span class="fw-medium">@cat.Name</span>
+                            <span class="d-flex gap-1">
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-secondary js-edit-category"
+                                        data-bs-toggle="modal" data-bs-target="#editCategoryModal"
+                                        data-id="@cat.Id"
+                                        data-name="@cat.Name"
+                                        data-type="@cat.Type">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <form asp-action="Delete" method="post" class="d-inline"
+                                      onsubmit="return confirm('Delete category \'@cat.Name\'?');">
                                     <input type="hidden" name="id" value="@cat.Id" />
                                     @Html.AntiForgeryToken()
-                                    <button class="btn btn-sm btn-outline-danger">Delete</button>
+                                    <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
                                 </form>
                             </span>
                         </li>
+                    }
+                    @if (!Model.Any(x => x.Type == TransactionType.Credit))
+                    {
+                        <li class="list-group-item text-muted small">No credit categories yet.</li>
                     }
                 </ul>
             </div>
         </div>
     </div>
+}
+
+<!-- ── Create Category Modal ─────────────────────────────── -->
+<div class="modal fade" id="createCategoryModal" tabindex="-1" aria-labelledby="createCategoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form asp-action="Create" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="fromModal" value="true" />
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createCategoryModalLabel">
+                        <i class="bi bi-tag me-2"></i>New Category
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger modal-error-alert d-none mb-3"></div>
+                    <div class="mb-3">
+                        <label for="createCategoryName" class="form-label">Category Name <span class="text-danger">*</span></label>
+                        <input id="createCategoryName" name="Name" type="text" class="form-control"
+                               placeholder="e.g. Salary, Rent..." maxlength="60" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="createCategoryType" class="form-label">Type <span class="text-danger">*</span></label>
+                        <select id="createCategoryType" name="Type" class="form-select">
+                            <option value="Debit">Debit (Expense)</option>
+                            <option value="Credit">Credit (Income)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Save Category</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ── Edit Category Modal ───────────────────────────────── -->
+<div class="modal fade" id="editCategoryModal" tabindex="-1" aria-labelledby="editCategoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form asp-action="Edit" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="fromModal" value="true" />
+                <input type="hidden" id="editCategoryId" name="Id" />
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editCategoryModalLabel">
+                        <i class="bi bi-pencil-square me-2"></i>Edit Category
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="editCategoryName" class="form-label">Category Name <span class="text-danger">*</span></label>
+                        <input id="editCategoryName" name="Name" type="text" class="form-control" maxlength="60" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="editCategoryType" class="form-label">Type <span class="text-danger">*</span></label>
+                        <select id="editCategoryType" name="Type" class="form-select">
+                            <option value="Debit">Debit (Expense)</option>
+                            <option value="Credit">Credit (Income)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Update Category</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('.js-edit-category').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                document.getElementById('editCategoryId').value = btn.dataset.id;
+                document.getElementById('editCategoryName').value = btn.dataset.name;
+                document.getElementById('editCategoryType').value = btn.dataset.type;
+            });
+        });
+    </script>
 }

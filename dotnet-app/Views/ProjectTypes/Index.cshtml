@@ -1,0 +1,139 @@
+@model IEnumerable<FinanceTracker.Web.Domain.Entities.ProjectType>
+@{
+    ViewData["Title"] = "Project Types";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="page-title mb-0"><i class="bi bi-tag me-2"></i>Project Types</h2>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createProjectTypeModal">
+        <i class="bi bi-plus-lg me-1"></i>Add Project Type
+    </button>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">
+        No project types yet. Click <strong>Add Project Type</strong> to create your first one.
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-striped align-middle">
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>Description</th>
+                <th class="text-end">Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var projectType in Model)
+            {
+                <tr>
+                    <td class="fw-semibold">@projectType.Name</td>
+                    <td>@(projectType.Description ?? "-")</td>
+                    <td class="text-end">
+                        <button type="button"
+                                class="btn btn-sm btn-outline-secondary js-edit-project-type"
+                                data-bs-toggle="modal" data-bs-target="#editProjectTypeModal"
+                                data-id="@projectType.Id"
+                                data-name="@projectType.Name"
+                                data-description="@projectType.Description">
+                            <i class="bi bi-pencil me-1"></i>Edit
+                        </button>
+                        <form asp-action="Delete" method="post" class="d-inline"
+                              onsubmit="return confirm('Delete project type \'@projectType.Name\'?');">
+                            <input type="hidden" name="id" value="@projectType.Id" />
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-trash me-1"></i>Delete
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}
+
+<!-- ── Create Project Type Modal ─────────────────────────── -->
+<div class="modal fade" id="createProjectTypeModal" tabindex="-1" aria-labelledby="createProjectTypeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form asp-action="Create" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="fromModal" value="true" />
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createProjectTypeModalLabel">
+                        <i class="bi bi-tag me-2"></i>New Project Type
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger modal-error-alert d-none mb-3"></div>
+                    <div class="mb-3">
+                        <label for="createPTName" class="form-label">Name <span class="text-danger">*</span></label>
+                        <input id="createPTName" name="Name" type="text" class="form-control"
+                               placeholder="e.g. Freelance, Investment..." maxlength="100" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="createPTDescription" class="form-label">Description</label>
+                        <textarea id="createPTDescription" name="Description" class="form-control" rows="3"
+                                  placeholder="Optional description..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Save Type</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ── Edit Project Type Modal ───────────────────────────── -->
+<div class="modal fade" id="editProjectTypeModal" tabindex="-1" aria-labelledby="editProjectTypeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form asp-action="Edit" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="fromModal" value="true" />
+                <input type="hidden" id="editPTId" name="Id" />
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editProjectTypeModalLabel">
+                        <i class="bi bi-pencil-square me-2"></i>Edit Project Type
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="editPTName" class="form-label">Name <span class="text-danger">*</span></label>
+                        <input id="editPTName" name="Name" type="text" class="form-control" maxlength="100" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="editPTDescription" class="form-label">Description</label>
+                        <textarea id="editPTDescription" name="Description" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Update Type</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('.js-edit-project-type').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                document.getElementById('editPTId').value = btn.dataset.id;
+                document.getElementById('editPTName').value = btn.dataset.name;
+                document.getElementById('editPTDescription').value = btn.dataset.description || '';
+            });
+        });
+    </script>
+}

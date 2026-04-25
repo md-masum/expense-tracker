@@ -6,21 +6,41 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FinanceTracker.Web.Application.Services;
 
-public class BackupService(FinanceDbContext dbContext)
+public class BackupService(
+    FinanceDbContext dbContext,
+    ActiveCompanyContext activeCompanyContext)
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
         WriteIndented = true
     };
 
+    private int GetRequiredCompanyId()
+        => activeCompanyContext.CompanyId
+           ?? throw new InvalidOperationException("No active company is selected.");
+
     public async Task<string> ExportJsonAsync(CancellationToken cancellationToken = default)
     {
+        var companyId = GetRequiredCompanyId();
+        var projects = await dbContext.Projects
+            .AsNoTracking()
+            .Where(x => x.CompanyId == companyId)
+            .ToListAsync(cancellationToken);
+
+        var projectIds = projects.Select(x => x.Id).ToList();
+        var transactions = await dbContext.Transactions
+            .AsNoTracking()
+            .Where(x => projectIds.Contains(x.ProjectId))
+            .ToListAsync(cancellationToken);
+
+        var usedCategoryIds = transactions.Select(x => x.CategoryId).Distinct().ToList();
+
         var payload = new BackupPayload
         {
             ExportedAt = DateTime.UtcNow,
-            Projects = await dbContext.Projects.AsNoTracking().ToListAsync(cancellationToken),
-            Categories = await dbContext.Categories.AsNoTracking().ToListAsync(cancellationToken),
-            Transactions = await dbContext.Transactions.AsNoTracking().ToListAsync(cancellationToken)
+            Projects = projects,
+            Categories = await dbContext.Categories.AsNoTracking().Where(x => usedCategoryIds.Contains(x.Id)).ToListAsync(cancellationToken),
+            Transactions = transactions
         };
 
         return JsonSerializer.Serialize(payload, JsonOptions);
@@ -28,7 +48,10 @@ public class BackupService(FinanceDbContext dbContext)
 
     public async Task<(string FileName, string Content)> ExportCsvAsync(int projectId, CancellationToken cancellationToken = default)
     {
-        var project = await dbContext.Projects.AsNoTracking().FirstOrDefaultAsync(x => x.Id == projectId, cancellationToken)
+        var companyId = GetRequiredCompanyId();
+        var project = await dbContext.Projects
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == projectId && x.CompanyId == companyId, cancellationToken)
             ?? throw new InvalidOperationException("Project not found.");
 
         var transactions = await dbContext.Transactions

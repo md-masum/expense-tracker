@@ -59,10 +59,11 @@ public class TransactionRepository(FinanceDbContext dbContext) : ITransactionRep
     public Task<List<FinanceTransaction>> GetAllAsync(CancellationToken cancellationToken = default)
         => dbContext.Transactions.AsNoTracking().ToListAsync(cancellationToken);
 
-    public Task<FinanceTransaction?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    public Task<FinanceTransaction?> GetByIdAsync(int id, int companyId, CancellationToken cancellationToken = default)
         => dbContext.Transactions
             .Include(x => x.Category)
-            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+            .Include(x => x.Project)
+            .FirstOrDefaultAsync(x => x.Id == id && x.Project != null && x.Project.CompanyId == companyId, cancellationToken);
 
     public Task AddAsync(FinanceTransaction transaction, CancellationToken cancellationToken = default)
         => dbContext.Transactions.AddAsync(transaction, cancellationToken).AsTask();

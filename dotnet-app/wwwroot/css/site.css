@@ -1,52 +1,343 @@
+/* ============================================================
+   Finance Tracker – Professional Theme
+   Primary: Deep Navy #1e3a5f | Accent: Vivid Blue #2563eb
+   ============================================================ */
+:root {
+  --ft-primary:       #1e3a5f;
+  --ft-primary-dark:  #162c48;
+  --ft-accent:        #2563eb;
+  --ft-accent-dark:   #1d4ed8;
+  --ft-success:       #16a34a;
+  --ft-danger:        #dc2626;
+  --ft-warning:       #d97706;
+  --ft-bg:            #f0f4f9;
+  --ft-surface:       #ffffff;
+  --ft-border:        #dde3ec;
+  --ft-text:          #1e293b;
+  --ft-text-muted:    #64748b;
+  --ft-shadow-sm:     0 1px 3px rgba(30,58,95,.12), 0 1px 2px rgba(30,58,95,.08);
+  --ft-shadow:        0 4px 12px rgba(30,58,95,.14);
+  --ft-shadow-lg:     0 8px 24px rgba(30,58,95,.18);
+  --ft-radius:        0.5rem;
+
+  /* Override Bootstrap primary */
+  --bs-primary:       #2563eb;
+  --bs-primary-rgb:   37, 99, 235;
+}
+
+/* ── Base ────────────────────────────────────────────────── */
 body {
-  background: #f2f5f9;
-  padding-bottom: 72px;
+  background: var(--ft-bg);
+  color: var(--ft-text);
+  padding-bottom: 68px;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
 
-.validation-summary-valid {
-  display: none;
-}
+.validation-summary-valid { display: none; }
 
+/* ── Page Headings ───────────────────────────────────────── */
 .page-title {
   font-weight: 700;
+  color: var(--ft-primary);
   margin-bottom: 1rem;
+  letter-spacing: -.3px;
 }
 
+/* ── Navbar ──────────────────────────────────────────────── */
+.app-navbar {
+  background: linear-gradient(135deg, var(--ft-primary) 0%, #162c48 100%) !important;
+  border-bottom: none;
+  box-shadow: 0 2px 12px rgba(0,0,0,.25);
+  padding-top: .55rem;
+  padding-bottom: .55rem;
+}
+
+.navbar-brand {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: .5px;
+  color: #fff !important;
+}
+
+.navbar-brand i {
+  color: #60a5fa;
+}
+
+.nav-link {
+  font-weight: 500;
+  color: rgba(255,255,255,.85) !important;
+  padding: .45rem .7rem !important;
+  border-radius: .4rem;
+  transition: background .2s ease, color .2s ease;
+}
+
+.nav-link:hover {
+  background: rgba(255,255,255,.12);
+  color: #fff !important;
+}
+
+.nav-link.active {
+  background: rgba(255,255,255,.2);
+  color: #fff !important;
+  font-weight: 600;
+}
+
+/* nav dropdowns */
+.navbar .dropdown-menu {
+  border: none;
+  box-shadow: var(--ft-shadow-lg);
+  border-radius: var(--ft-radius);
+  padding: .4rem 0;
+  min-width: 210px;
+  background: var(--ft-surface);
+}
+
+.navbar .dropdown-item {
+  font-size: .9rem;
+  font-weight: 500;
+  padding: .45rem 1rem;
+  color: var(--ft-text);
+  border-radius: .3rem;
+  margin: .1rem .3rem;
+  width: calc(100% - .6rem);
+  transition: background .15s ease;
+}
+
+.navbar .dropdown-item:hover,
+.navbar .dropdown-item:focus {
+  background: var(--ft-bg);
+  color: var(--ft-accent);
+}
+
+.navbar .dropdown-item.active {
+  background: var(--ft-accent);
+  color: #fff;
+}
+
+.navbar .dropdown-item.text-danger:hover {
+  background: #fef2f2 !important;
+  color: var(--ft-danger) !important;
+}
+
+.navbar .dropdown-header {
+  font-size: .76rem;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  color: var(--ft-text-muted);
+  font-weight: 600;
+  padding: .5rem 1rem .25rem;
+}
+
+.navbar .dropdown-divider {
+  border-color: var(--ft-border);
+  margin: .3rem 0;
+}
+
+/* top-bar company/user buttons */
+.btn-navbar-company {
+  background: rgba(255,255,255,.15);
+  border: 1px solid rgba(255,255,255,.25);
+  color: #fff !important;
+  font-weight: 600;
+  font-size: .82rem;
+  border-radius: .4rem;
+  padding: .3rem .65rem;
+  transition: background .2s;
+  white-space: nowrap;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn-navbar-company:hover {
+  background: rgba(255,255,255,.25);
+  color: #fff !important;
+}
+
+.btn-navbar-user {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,.35);
+  color: rgba(255,255,255,.9) !important;
+  border-radius: .4rem;
+  padding: .3rem .55rem;
+  transition: background .2s;
+}
+
+.btn-navbar-user:hover {
+  background: rgba(255,255,255,.15);
+  color: #fff !important;
+}
+
+/* mobile collapse */
+.navbar-collapse {
+  border-top: 1px solid rgba(255,255,255,.1);
+  padding-top: .5rem;
+  margin-top: .5rem;
+}
+
+@media (min-width: 992px) {
+  .navbar-collapse {
+    border-top: none;
+    padding-top: 0;
+    margin-top: 0;
+  }
+}
+
+/* ── Summary Cards ───────────────────────────────────────── */
 .summary-card {
-  border-left: 5px solid transparent;
+  border-left: 4px solid transparent;
+  border-radius: var(--ft-radius);
+  box-shadow: var(--ft-shadow-sm);
+  background: var(--ft-surface);
+  transition: box-shadow .2s ease;
 }
 
-.summary-card.income {
-  border-left-color: #198754;
+.summary-card:hover { box-shadow: var(--ft-shadow); }
+
+.summary-card.income  { border-left-color: var(--ft-success); }
+.summary-card.expense { border-left-color: var(--ft-danger); }
+.summary-card.balance { border-left-color: var(--ft-accent); }
+
+/* ── Cards ───────────────────────────────────────────────── */
+.card {
+  border: 1px solid var(--ft-border);
+  border-radius: var(--ft-radius);
+  box-shadow: var(--ft-shadow-sm);
+  background: var(--ft-surface);
 }
 
-.summary-card.expense {
-  border-left-color: #dc3545;
+.card-header {
+  background: var(--ft-bg);
+  border-bottom: 1px solid var(--ft-border);
+  font-weight: 600;
+  padding: .7rem 1rem;
 }
 
-.summary-card.balance {
-  border-left-color: #0d6efd;
+/* ── Tables ──────────────────────────────────────────────── */
+.table {
+  font-size: .9rem;
 }
 
+.table thead th {
+  background: var(--ft-bg);
+  font-weight: 600;
+  font-size: .8rem;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  color: var(--ft-text-muted);
+  border-bottom: 2px solid var(--ft-border);
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) > * {
+  background-color: rgba(30,58,95,.03);
+}
+
+/* ── Buttons ─────────────────────────────────────────────── */
+.btn-primary {
+  background: var(--ft-accent);
+  border-color: var(--ft-accent);
+  font-weight: 600;
+  border-radius: .4rem;
+  transition: background .2s, box-shadow .2s;
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+  background: var(--ft-accent-dark);
+  border-color: var(--ft-accent-dark);
+  box-shadow: 0 4px 10px rgba(37,99,235,.3);
+}
+
+.btn-outline-primary {
+  border-color: var(--ft-accent);
+  color: var(--ft-accent);
+}
+
+.btn-outline-primary:hover {
+  background: var(--ft-accent);
+  border-color: var(--ft-accent);
+}
+
+/* ── Alerts ──────────────────────────────────────────────── */
+.alert {
+  border-radius: var(--ft-radius);
+  border-left-width: 4px;
+}
+
+/* ── Modal / Offcanvas ───────────────────────────────────── */
+.modal-header,
+.offcanvas-header {
+  background: var(--ft-primary);
+  color: #fff;
+  border-bottom: none;
+  border-radius: .5rem .5rem 0 0;
+}
+
+.modal-header .btn-close,
+.offcanvas-header .btn-close {
+  filter: invert(1) grayscale(1);
+}
+
+.modal-title,
+.offcanvas-title {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.offcanvas {
+  max-width: min(480px, 96vw);
+}
+
+/* form inside modals */
+.modal-body label,
+.offcanvas-body label {
+  font-weight: 600;
+  font-size: .85rem;
+  color: var(--ft-text-muted);
+}
+
+/* ── Footer ──────────────────────────────────────────────── */
 .app-footer {
   position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  left: 0; right: 0; bottom: 0;
   z-index: 1000;
   text-align: center;
-  padding: 0.65rem 1rem;
-  background: rgba(255, 255, 255, 0.96);
-  border-top: 1px solid #dce3ec;
-  font-size: 0.85rem;
+  padding: .5rem 1rem;
+  background: var(--ft-surface);
+  border-top: 1px solid var(--ft-border);
+  font-size: .82rem;
+  color: var(--ft-text-muted);
+  box-shadow: 0 -1px 6px rgba(30,58,95,.07);
 }
 
 .app-footer a {
   text-decoration: none;
+  color: var(--ft-accent);
+  font-weight: 500;
+}
+
+.app-footer a:hover { text-decoration: underline; }
+
+/* ── Badges ──────────────────────────────────────────────── */
+.badge.text-bg-secondary {
+  background-color: #e2e8f0 !important;
+  color: var(--ft-text-muted) !important;
+}
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 991px) {
+  .btn-navbar-company {
+    max-width: 120px;
+    font-size: .78rem;
+  }
 }
 
 @media (max-width: 576px) {
-  body {
-    padding-bottom: 88px;
-  }
+  body { padding-bottom: 84px; }
+
+  .page-title { font-size: 1.3rem; }
+
+  .btn-navbar-company { display: none; }
+
+  main.container { padding-left: .85rem; padding-right: .85rem; }
 }

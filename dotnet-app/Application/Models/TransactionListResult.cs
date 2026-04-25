@@ -13,7 +13,7 @@ public class TransactionListResult
     public string? Search { get; set; }
     public TransactionType? Type { get; set; }
     public int? CategoryId { get; set; }
-    public decimal Income { get; set; }
-    public decimal Expense { get; set; }
+    public decimal Credit { get; set; }
+    public decimal Debit { get; set; }
     public decimal Balance { get; set; }
 }

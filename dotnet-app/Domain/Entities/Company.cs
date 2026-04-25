@@ -12,4 +12,5 @@ public class Company
 
     public ICollection<UserCompanyMap> UserCompanyMaps { get; set; } = new List<UserCompanyMap>();
     public ICollection<UserCompanyJoinRequest> JoinRequests { get; set; } = new List<UserCompanyJoinRequest>();
+    public ICollection<Project> Projects { get; set; } = new List<Project>();
 }

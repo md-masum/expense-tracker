@@ -8,11 +8,17 @@ namespace FinanceTracker.Web.Controllers;
 [Authorize]
 public class BackupController(
     BackupService backupService,
-    IProjectRepository projectRepository) : Controller
+    IProjectRepository projectRepository,
+    ActiveCompanyContext activeCompanyContext) : Controller
 {
     public async Task<IActionResult> Index(CancellationToken cancellationToken)
     {
-        ViewBag.Projects = await projectRepository.GetAllAsync(cancellationToken: cancellationToken);
+        if (!activeCompanyContext.CompanyId.HasValue)
+        {
+            return RedirectToAction("Index", "Companies");
+        }
+
+        ViewBag.Projects = await projectRepository.GetAllAsync(activeCompanyContext.CompanyId.Value, cancellationToken: cancellationToken);
         return View();
     }
 

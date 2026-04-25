@@ -15,7 +15,7 @@ public interface ITransactionRepository
 
     Task<List<FinanceTransaction>> GetByProjectAsync(int projectId, CancellationToken cancellationToken = default);
     Task<List<FinanceTransaction>> GetAllAsync(CancellationToken cancellationToken = default);
-    Task<FinanceTransaction?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+    Task<FinanceTransaction?> GetByIdAsync(int id, int companyId, CancellationToken cancellationToken = default);
     Task AddAsync(FinanceTransaction transaction, CancellationToken cancellationToken = default);
     void Remove(FinanceTransaction transaction);
     Task<int> GetNextSeqNoAsync(int projectId, CancellationToken cancellationToken = default);

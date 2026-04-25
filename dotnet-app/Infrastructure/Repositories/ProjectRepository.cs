@@ -7,9 +7,11 @@ namespace FinanceTracker.Web.Infrastructure.Repositories;
 
 public class ProjectRepository(FinanceDbContext dbContext) : IProjectRepository
 {
-    public Task<List<Project>> GetAllAsync(bool includeTransactions = false, CancellationToken cancellationToken = default)
+    public Task<List<Project>> GetAllAsync(int companyId, bool includeTransactions = false, CancellationToken cancellationToken = default)
     {
-        IQueryable<Project> query = dbContext.Projects;
+        IQueryable<Project> query = dbContext.Projects
+            .Where(x => x.CompanyId == companyId)
+            .Include(x => x.Type);
 
         if (includeTransactions)
         {
@@ -19,9 +21,11 @@ public class ProjectRepository(FinanceDbContext dbContext) : IProjectRepository
         return query.OrderByDescending(x => x.CreatedAt).ToListAsync(cancellationToken);
     }
 
-    public Task<Project?> GetByIdAsync(int id, bool includeTransactions = false, CancellationToken cancellationToken = default)
+    public Task<Project?> GetByIdAsync(int id, int companyId, bool includeTransactions = false, CancellationToken cancellationToken = default)
     {
-        IQueryable<Project> query = dbContext.Projects;
+        IQueryable<Project> query = dbContext.Projects
+            .Where(x => x.CompanyId == companyId)
+            .Include(x => x.Type);
 
         if (includeTransactions)
         {
@@ -36,4 +40,7 @@ public class ProjectRepository(FinanceDbContext dbContext) : IProjectRepository
 
     public void Remove(Project project)
         => dbContext.Projects.Remove(project);
+
+    public Task<bool> AnyByTypeAsync(int projectTypeId, CancellationToken cancellationToken = default)
+        => dbContext.Projects.AnyAsync(x => x.ProjectTypeId == projectTypeId, cancellationToken);
 }

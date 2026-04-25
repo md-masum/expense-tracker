@@ -5,14 +5,17 @@
 }
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h2 class="page-title mb-0">Companies</h2>
-    <a asp-action="Create" class="btn btn-primary">New Company</a>
+    <h2 class="page-title mb-0"><i class="bi bi-building me-2"></i>Companies</h2>
+    <button type="button" class="btn btn-primary"
+            data-bs-toggle="offcanvas" data-bs-target="#createCompanyOffcanvas">
+        <i class="bi bi-plus-lg me-1"></i>New Company
+    </button>
 </div>
 
 @if (!Model.HasAnyCompany)
 {
     <div class="alert alert-info">
-        You are not linked with any company yet. Create your own company or send a join request below.
+        <i class="bi bi-info-circle me-2"></i>You are not linked with any company yet. Create your own or send a join request below.
     </div>
 }
 
@@ -30,46 +33,145 @@ else
                 <th>Name</th>
                 <th>Description</th>
                 <th>Owner</th>
+                <th>Users</th>
                 <th class="text-end">Actions</th>
             </tr>
             </thead>
             <tbody>
             @foreach (var c in Model.Companies)
             {
+                var userMap = c.UserCompanyMaps.FirstOrDefault(m => m.UserId == currentUserId);
                 var isOwner = c.OwnerId == currentUserId;
                 var isMember = isOwner || c.UserCompanyMaps.Any(m => m.UserId == currentUserId);
+                var isDefaultCompany = userMap?.IsDefault == true;
                 var hasPendingRequest = c.JoinRequests.Any(r => r.UserId == currentUserId && r.Status == CompanyJoinRequestStatus.Pending);
                 var pendingRequests = c.JoinRequests
                     .Where(r => r.Status == CompanyJoinRequestStatus.Pending)
                     .OrderBy(r => r.CreatedAt)
                     .ToList();
+                var members = c.UserCompanyMaps.Select(m => m.User).GroupBy(u => u.Id).Select(g => g.First()).ToList();
+                if (members.All(u => u.Id != c.OwnerId)) { members.Insert(0, c.Owner); }
+                var memberCount = members.Count;
+                var usersModalId = $"companyUsersModal-{c.Id}";
+
                 <tr>
                     <td>
                         @if (!string.IsNullOrWhiteSpace(c.ImageUrl))
                         {
-                            <img src="@c.ImageUrl" alt="@c.Name banner" style="width:100px;height:56px;object-fit:cover" class="rounded border" />
+                            <img src="@c.ImageUrl" alt="@c.Name banner"
+                                 style="width:90px;height:52px;object-fit:cover" class="rounded border" />
                         }
                         else
                         {
-                            <span class="text-muted small">No image</span>
+                            <span class="text-muted small"><i class="bi bi-image"></i></span>
                         }
                     </td>
-                    <td>@c.Name</td>
+                    <td class="fw-semibold">
+                        @c.Name
+                        @if (isDefaultCompany)
+                        {
+                            <span class="badge text-bg-primary ms-1">Active</span>
+                        }
+                    </td>
                     <td>@(string.IsNullOrWhiteSpace(c.Description) ? "-" : c.Description)</td>
-                    <td>@c.Owner?.Email</td>
+                    <td><span class="small">@c.Owner.Email</span></td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge text-bg-secondary">@memberCount</span>
+                        </div>
+                        <button type="button" class="btn btn-link btn-sm px-0 mt-1"
+                                data-bs-toggle="modal" data-bs-target="#@usersModalId">
+                            <i class="bi bi-people me-1"></i>Show users
+                        </button>
+                        @if (isMember && !isDefaultCompany)
+                        {
+                            <form asp-action="SetDefault" method="post" class="mt-1">
+                                <input type="hidden" name="companyId" value="@c.Id" />
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-check2-circle me-1"></i>Set active
+                                </button>
+                            </form>
+                        }
+
+                        <!-- Users Modal -->
+                        <div class="modal fade" id="@usersModalId" tabindex="-1" aria-labelledby="@($"{usersModalId}-label")" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-scrollable">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="@($"{usersModalId}-label")">
+                                            <i class="bi bi-people me-2"></i>@c.Name users (@memberCount)
+                                        </h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body p-0">
+                                        @if (memberCount == 0)
+                                        {
+                                            <div class="p-3 text-muted">No users linked yet.</div>
+                                        }
+                                        else
+                                        {
+                                            <ul class="list-group list-group-flush">
+                                                @foreach (var member in members)
+                                                {
+                                                    var isMemberOwner = member.Id == c.OwnerId;
+                                                    var canRemoveMember = isOwner && !isMemberOwner;
+                                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                        <div>
+                                                            <div class="fw-semibold">@(member.Email ?? member.UserName ?? "Unknown")</div>
+                                                            @if (!string.IsNullOrWhiteSpace(member.UserName) && member.UserName != member.Email)
+                                                            {
+                                                                <div class="small text-muted">@member.UserName</div>
+                                                            }
+                                                        </div>
+                                                        <div class="d-flex align-items-center gap-2">
+                                                            <span class="badge @(isMemberOwner ? "text-bg-primary" : "text-bg-light")">
+                                                                @(isMemberOwner ? "Owner" : "Member")
+                                                            </span>
+                                                            @if (canRemoveMember)
+                                                            {
+                                                                <form asp-action="RemoveUser" method="post" class="d-inline"
+                                                                      onsubmit="return confirm('Remove this user?');">
+                                                                    <input type="hidden" name="companyId" value="@c.Id" />
+                                                                    <input type="hidden" name="userId" value="@member.Id" />
+                                                                    @Html.AntiForgeryToken()
+                                                                    <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
+                                                                </form>
+                                                            }
+                                                        </div>
+                                                    </li>
+                                                }
+                                            </ul>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
                     <td class="text-end">
                         @if (isOwner)
                         {
-                            <a asp-action="Edit" asp-route-id="@c.Id" class="btn btn-sm btn-outline-secondary">Edit</a>
-                            <form asp-action="Delete" method="post" class="d-inline" onsubmit="return confirm('Delete this company?');">
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-secondary js-edit-company"
+                                    data-bs-toggle="offcanvas" data-bs-target="#editCompanyOffcanvas"
+                                    data-id="@c.Id"
+                                    data-name="@c.Name"
+                                    data-description="@c.Description"
+                                    data-image-url="@c.ImageUrl">
+                                <i class="bi bi-pencil me-1"></i>Edit
+                            </button>
+                            <form asp-action="Delete" method="post" class="d-inline"
+                                  onsubmit="return confirm('Delete company \'@c.Name\'? This cannot be undone.');">
                                 <input type="hidden" name="id" value="@c.Id" />
                                 @Html.AntiForgeryToken()
-                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    <i class="bi bi-trash me-1"></i>Delete
+                                </button>
                             </form>
                         }
                         else if (isMember)
                         {
-                            <span class="badge text-bg-success">Member</span>
+                            <span class="badge text-bg-success"><i class="bi bi-check-circle me-1"></i>Member</span>
                         }
                         else if (hasPendingRequest)
                         {
@@ -80,7 +182,9 @@ else
                             <form asp-action="RequestJoin" method="post" class="d-inline">
                                 <input type="hidden" name="companyId" value="@c.Id" />
                                 @Html.AntiForgeryToken()
-                                <button type="submit" class="btn btn-sm btn-outline-primary">Join</button>
+                                <button type="submit" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-person-plus me-1"></i>Join
+                                </button>
                             </form>
                         }
                     </td>
@@ -90,18 +194,14 @@ else
                 {
                     <tr>
                         <td></td>
-                        <td colspan="4">
+                        <td colspan="5">
                             <div class="card border-0 bg-light">
                                 <div class="card-body py-3">
-                                    <h6 class="mb-3">Pending Join Requests</h6>
+                                    <h6 class="mb-3"><i class="bi bi-person-check me-2"></i>Pending Join Requests</h6>
                                     <div class="table-responsive">
                                         <table class="table table-sm align-middle mb-0">
                                             <thead>
-                                            <tr>
-                                                <th>User</th>
-                                                <th>Requested</th>
-                                                <th class="text-end">Actions</th>
-                                            </tr>
+                                            <tr><th>User</th><th>Requested</th><th class="text-end">Actions</th></tr>
                                             </thead>
                                             <tbody>
                                             @foreach (var request in pendingRequests)
@@ -137,3 +237,112 @@ else
     </div>
 }
 
+<!-- ── Create Company Offcanvas ───────────────────────────── -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="createCompanyOffcanvas"
+     aria-labelledby="createCompanyOffcanvasLabel">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="createCompanyOffcanvasLabel">
+            <i class="bi bi-building-add me-2"></i>New Company
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        <div class="alert alert-danger modal-error-alert d-none mb-3"></div>
+        <form asp-action="Create" method="post" enctype="multipart/form-data">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="fromModal" value="true" />
+            <div class="mb-3">
+                <label for="createCompanyName" class="form-label">Company Name <span class="text-danger">*</span></label>
+                <input id="createCompanyName" name="Name" type="text" class="form-control"
+                       placeholder="Enter company name" maxlength="150" required />
+            </div>
+            <div class="mb-3">
+                <label for="createCompanyDesc" class="form-label">Description</label>
+                <textarea id="createCompanyDesc" name="Description" class="form-control" rows="3"
+                          placeholder="Optional description..."></textarea>
+            </div>
+            <div class="mb-3">
+                <label for="createCompanyBanner" class="form-label">Banner Image</label>
+                <input id="createCompanyBanner" name="BannerImage" type="file" class="form-control"
+                       accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
+                <div class="form-text">JPG, PNG, WEBP · Max 5 MB</div>
+            </div>
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-lg me-1"></i>Create Company
+                </button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="offcanvas">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ── Edit Company Offcanvas ─────────────────────────────── -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="editCompanyOffcanvas"
+     aria-labelledby="editCompanyOffcanvasLabel">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="editCompanyOffcanvasLabel">
+            <i class="bi bi-pencil-square me-2"></i>Edit Company
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        <form asp-action="Edit" method="post" enctype="multipart/form-data" id="editCompanyForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="fromModal" value="true" />
+            <input type="hidden" id="editCompanyId" name="Id" />
+            <input type="hidden" id="editCompanyExistingImage" name="ExistingImageUrl" />
+            <div class="mb-3">
+                <label for="editCompanyName" class="form-label">Company Name <span class="text-danger">*</span></label>
+                <input id="editCompanyName" name="Name" type="text" class="form-control" maxlength="150" required />
+            </div>
+            <div class="mb-3">
+                <label for="editCompanyDesc" class="form-label">Description</label>
+                <textarea id="editCompanyDesc" name="Description" class="form-control" rows="3"></textarea>
+            </div>
+            <div id="editCompanyBannerPreviewWrap" class="mb-2" style="display:none;">
+                <label class="form-label">Current Banner</label>
+                <img id="editCompanyBannerPreview" src="" alt="Current banner"
+                     class="img-fluid rounded border w-100" style="max-height:140px;object-fit:cover;" />
+            </div>
+            <div class="mb-3">
+                <label for="editCompanyBanner" class="form-label">Replace Banner Image</label>
+                <input id="editCompanyBanner" name="BannerImage" type="file" class="form-control"
+                       accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
+                <div class="form-text">Leave empty to keep current banner. JPG, PNG, WEBP · Max 5 MB.</div>
+            </div>
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-lg me-1"></i>Update Company
+                </button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="offcanvas">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('.js-edit-company').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                document.getElementById('editCompanyId').value = btn.dataset.id;
+                document.getElementById('editCompanyName').value = btn.dataset.name;
+                document.getElementById('editCompanyDesc').value = btn.dataset.description || '';
+                document.getElementById('editCompanyExistingImage').value = btn.dataset.imageUrl || '';
+
+                var preview = document.getElementById('editCompanyBannerPreview');
+                var wrap = document.getElementById('editCompanyBannerPreviewWrap');
+                var imageUrl = btn.dataset.imageUrl;
+                if (imageUrl) {
+                    preview.src = imageUrl;
+                    wrap.style.display = 'block';
+                } else {
+                    preview.src = '';
+                    wrap.style.display = 'none';
+                }
+                // Reset file input
+                document.getElementById('editCompanyBanner').value = '';
+            });
+        });
+    </script>
+}

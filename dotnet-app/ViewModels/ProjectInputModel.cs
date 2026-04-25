@@ -9,6 +9,6 @@ public class ProjectInputModel
     [Required, StringLength(100)]
     public string Name { get; set; } = string.Empty;
 
-    [Required, StringLength(40)]
-    public string Type { get; set; } = string.Empty;
+    [Required]
+    public int ProjectTypeId { get; set; }
 }

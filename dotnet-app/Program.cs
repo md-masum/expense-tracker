@@ -16,6 +16,8 @@ builder.Services.AddControllersWithViews(options =>
     options.Filters.AddService<RequireCompanyOnboardingFilter>();
 });
 
+builder.Services.AddHttpContextAccessor();
+
 builder.Services.AddDbContext<FinanceDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
@@ -46,15 +48,19 @@ builder.Services.AddAuthorizationBuilder()
 
 builder.Services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<FinanceDbContext>());
 builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
+builder.Services.AddScoped<IProjectTypeRepository, ProjectTypeRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
 builder.Services.AddScoped<ICompanyRepository, CompanyRepository>();
 builder.Services.AddScoped<IUserCompanyJoinRequestRepository, UserCompanyJoinRequestRepository>();
 builder.Services.AddScoped<ICompanyBannerStorage, LocalCompanyBannerStorage>();
+builder.Services.AddScoped<ITransactionInvoiceStorage, LocalTransactionInvoiceStorage>();
 builder.Services.AddScoped<RequireCompanyOnboardingFilter>();
+builder.Services.AddScoped<ActiveCompanyContext>();
 
 builder.Services.AddScoped<DashboardService>();
 builder.Services.AddScoped<ProjectService>();
+builder.Services.AddScoped<ProjectTypeService>();
 builder.Services.AddScoped<CategoryService>();
 builder.Services.AddScoped<TransactionService>();
 builder.Services.AddScoped<BackupService>();
@@ -75,6 +81,7 @@ app.UseStaticFiles();
 app.UseRouting();
 
 app.UseAuthentication();
+app.UseMiddleware<ActiveCompanyContextMiddleware>();
 app.UseAuthorization();
 
 app.MapStaticAssets();

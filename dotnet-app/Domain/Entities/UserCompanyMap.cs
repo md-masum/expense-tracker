@@ -4,6 +4,8 @@ public class UserCompanyMap
 {
     public int Id { get; set; }
 
+    public bool IsDefault { get; set; }
+
     public int CompanyId { get; set; }
     public Company Company { get; set; } = null!;
 

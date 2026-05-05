@@ -25,6 +25,22 @@ jobs:
           FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}
           FIREBASE_APP_ID:              ${{ secrets.FIREBASE_APP_ID }}
         run: |
+          set -euo pipefail
+
+          # Fail fast if any required secret is missing.
+          for var in \
+            FIREBASE_API_KEY \
+            FIREBASE_AUTH_DOMAIN \
+            FIREBASE_PROJECT_ID \
+            FIREBASE_STORAGE_BUCKET \
+            FIREBASE_MESSAGING_SENDER_ID \
+            FIREBASE_APP_ID; do
+            if [ -z "${!var:-}" ]; then
+              echo "Missing required secret: ${var}" >&2
+              exit 1
+            fi
+          done
+
           mkdir -p /tmp/site
           cp -r . /tmp/site/
           sed \
@@ -35,6 +51,28 @@ jobs:
             -e "s|__FIREBASE_MESSAGING_SENDER_ID__|${FIREBASE_MESSAGING_SENDER_ID}|g" \
             -e "s|__FIREBASE_APP_ID__|${FIREBASE_APP_ID}|g" \
             /tmp/site/js/firebase-config.template.js > /tmp/site/js/firebase-config.js
+
+          # Verify the generated config exists and no template placeholders remain.
+          test -s /tmp/site/js/firebase-config.js
+          if grep -q "__FIREBASE_" /tmp/site/js/firebase-config.js; then
+            echo "firebase-config.js still contains unreplaced placeholders." >&2
+            exit 1
+          fi
+
+          # Verify index references scripts in the required order.
+          if ! grep -q 'src="js/firebase-config.js"' /tmp/site/index.html; then
+            echo "index.html is missing js/firebase-config.js script reference." >&2
+            exit 1
+          fi
+
+          if ! awk '
+            /src="js\/firebase-config.js"/ {seenCfg=1}
+            /src="js\/app.js"/ {seenApp=1; if (!seenCfg) bad=1}
+            END {exit bad}
+          ' /tmp/site/index.html; then
+            echo "js/firebase-config.js must be loaded before js/app.js in index.html." >&2
+            exit 1
+          fi
 
           # firebase-config.js is ignored in the source repo; unignore it for gh-pages publish.
           echo "!js/firebase-config.js" >> /tmp/site/.gitignore

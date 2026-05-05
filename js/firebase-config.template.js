@@ -37,6 +37,10 @@ const fbAuth = firebase.auth();
 /** Shared Firestore instance */
 const fbDb = firebase.firestore();
 
+// Expose shared instances globally for other scripts (app.js, db.js)
+globalThis.fbAuth = fbAuth;
+globalThis.fbDb = fbDb;
+
 // Enable offline persistence so the app works without internet after first login
 fbDb.enablePersistence({ synchronizeTabs: true }).catch(err => {
   if (err.code === 'failed-precondition') {

@@ -3,13 +3,24 @@
    Requires firebase-config.js to be loaded first (fbAuth, fbDb must be defined). */
 
 const FinanceDB = (() => {
+  function auth() {
+    return globalThis.fbAuth || null;
+  }
+
+  function db() {
+    return globalThis.fbDb || null;
+  }
+
   /* ── Collection helper ───────────────────────────────────────────────── */
 
   /** Returns a Firestore sub-collection reference for the current user. */
   function col(store) {
-    const uid = fbAuth.currentUser?.uid;
+    const authRef = auth();
+    const dbRef = db();
+    const uid = authRef?.currentUser?.uid;
+    if (!dbRef) throw new Error('Database service unavailable');
     if (!uid) throw new Error('Not authenticated');
-    return fbDb.collection('users').doc(uid).collection(store);
+    return dbRef.collection('users').doc(uid).collection(store);
   }
 
   /* ── Generic CRUD ─────────────────────────────────────────────────────── */
@@ -48,8 +59,10 @@ const FinanceDB = (() => {
   }
 
   async function clearStore(store) {
+    const dbRef = db();
+    if (!dbRef) throw new Error('Database service unavailable');
     const snap  = await col(store).get();
-    const batch = fbDb.batch();
+    const batch = dbRef.batch();
     snap.docs.forEach(d => batch.delete(d.ref));
     await batch.commit();
   }
@@ -93,6 +106,8 @@ const FinanceDB = (() => {
    * Returns the number of deleted transaction documents.
    */
   async function deleteTransactionsByProject(projectId) {
+    const dbRef = db();
+    if (!dbRef) throw new Error('Database service unavailable');
     const projectKey = String(projectId);
     const chunkSize = 400;
     let deletedCount = 0;
@@ -105,7 +120,7 @@ const FinanceDB = (() => {
 
       if (snap.empty) break;
 
-      const batch = fbDb.batch();
+      const batch = dbRef.batch();
       snap.docs.forEach(doc => batch.delete(doc.ref));
       await batch.commit();
       deletedCount += snap.size;
@@ -117,6 +132,8 @@ const FinanceDB = (() => {
   /* ── Seed defaults ───────────────────────────────────────────────────── */
 
   async function seedDefaults() {
+    const dbRef = db();
+    if (!dbRef) throw new Error('Database service unavailable');
     const snap = await col('categories').limit(1).get();
     if (!snap.empty) return;
 
@@ -129,7 +146,7 @@ const FinanceDB = (() => {
       { name: 'Sale',       type: 'Income'  },
     ];
 
-    const batch = fbDb.batch();
+    const batch = dbRef.batch();
     defaults.forEach(cat => {
       batch.set(col('categories').doc(), cat);
     });

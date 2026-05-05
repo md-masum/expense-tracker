@@ -11,6 +11,19 @@ const App = (() => {
   const $ = id => document.getElementById(id);
   const content = () => $('app-content');
 
+  function auth() {
+    return globalThis.fbAuth || null;
+  }
+
+  function showFirebaseUnavailableError() {
+    showLoginScreen();
+    const errorEl = $('loginError');
+    if (errorEl) {
+      errorEl.textContent = 'Firebase failed to initialize. Check internet/script loading and firebase-config.js.';
+      errorEl.classList.remove('d-none');
+    }
+  }
+
   /** Escape HTML to prevent XSS when inserting user data into innerHTML */
   function esc(str) {
     return String(str ?? '')
@@ -156,7 +169,8 @@ const App = (() => {
 
   async function route() {
     // Do not render if not authenticated
-    if (!fbAuth.currentUser) return;
+    const authRef = auth();
+    if (!authRef?.currentUser) return;
 
     const hash  = location.hash.replace(/^#\/?/, '') || 'dashboard';
     const parts = hash.split('/').filter(Boolean);
@@ -1176,11 +1190,20 @@ const App = (() => {
   }
 
   async function handleLogin() {
+    const authRef = auth();
     const email    = ($('loginEmail')?.value   || '').trim();
     const password = ($('loginPassword')?.value || '');
     const errorEl  = $('loginError');
     const spinner  = $('loginSpinner');
     const btn      = $('loginBtn');
+
+    if (!authRef) {
+      if (errorEl) {
+        errorEl.textContent = 'Firebase is not ready. Please refresh and check your internet connection.';
+        errorEl.classList.remove('d-none');
+      }
+      return;
+    }
 
     if (!email || !password) {
       if (errorEl) { errorEl.textContent = 'Please enter your email and password.'; errorEl.classList.remove('d-none'); }
@@ -1192,7 +1215,7 @@ const App = (() => {
     if (btn)     btn.disabled = true;
 
     try {
-      await fbAuth.signInWithEmailAndPassword(email, password);
+      await authRef.signInWithEmailAndPassword(email, password);
       // onAuthStateChanged fires automatically → showApp() is called
     } catch (err) {
       const known = ['auth/invalid-credential', 'auth/wrong-password', 'auth/user-not-found'];
@@ -1205,9 +1228,14 @@ const App = (() => {
   }
 
   async function logout() {
+    const authRef = auth();
+    if (!authRef) {
+      showToast('Authentication service is unavailable.', 'danger');
+      return;
+    }
     if (!confirm('Sign out?')) return;
     content().innerHTML = '';
-    await fbAuth.signOut();
+    await authRef.signOut();
     // onAuthStateChanged fires with null → showLoginScreen()
   }
 
@@ -1283,8 +1311,14 @@ const App = (() => {
     // Hash-based routing (route() is a no-op when not authenticated)
     window.addEventListener('hashchange', route);
 
+    const authRef = auth();
+    if (!authRef) {
+      showFirebaseUnavailableError();
+      return;
+    }
+
     // Firebase auth state listener — drives the entire app lifecycle
-    fbAuth.onAuthStateChanged(async user => {
+    authRef.onAuthStateChanged(async user => {
       if (user) {
         showApp(user);
         try { await FinanceDB.seedDefaults(); } catch (e) { console.warn('Seed failed:', e); }

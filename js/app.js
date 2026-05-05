@@ -564,6 +564,20 @@ const App = (() => {
     });
 
     const total      = filtered.length;
+    const filteredIncome = filtered
+      .filter(tx => tx.type === 'Income')
+      .reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
+    const filteredExpense = filtered
+      .filter(tx => tx.type === 'Expense')
+      .reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
+    const filteredNet = filteredIncome - filteredExpense;
+    const filteredTotal = filtered
+      .reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
+
+    const filterModeLabel = typeF
+      ? `${typeF} total`
+      : 'Filtered total';
+
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
     const page       = Math.min(_txState.page, totalPages);
     _txState.page    = page;
@@ -609,6 +623,23 @@ const App = (() => {
             </div>`).join('') +
         `</div>`;
 
+    const filteredSummaryHTML = `
+      <div class="card shadow-sm mb-3">
+        <div class="card-body py-2 px-3">
+          <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div class="small text-muted">
+              Matched <strong>${total}</strong> transaction${total !== 1 ? 's' : ''}
+            </div>
+            <div class="d-flex flex-wrap gap-3 small">
+              <span><span class="text-muted">${filterModeLabel}:</span> <strong>${formatMoney(filteredTotal)}</strong></span>
+              <span><span class="text-muted">Income:</span> <strong class="text-success">${formatMoney(filteredIncome)}</strong></span>
+              <span><span class="text-muted">Expense:</span> <strong class="text-danger">${formatMoney(filteredExpense)}</strong></span>
+              <span><span class="text-muted">Net:</span> <strong class="${filteredNet >= 0 ? 'text-primary' : 'text-warning'}">${formatMoney(filteredNet)}</strong></span>
+            </div>
+          </div>
+        </div>
+      </div>`;
+
     const paginationHTML = totalPages <= 1 ? '' : `
       <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
         <small class="text-muted">
@@ -633,7 +664,7 @@ const App = (() => {
         </nav>
       </div>`;
 
-    $('txListContainer').innerHTML = listHTML + paginationHTML;
+    $('txListContainer').innerHTML = filteredSummaryHTML + listHTML + paginationHTML;
   }
 
   /** Returns page numbers with '…' gaps for the pagination bar. */
